@@ -706,30 +706,33 @@ export type Database = {
           claim: string;
           confidence: number | null;
           created_at: string;
-          episode_id: string;
+          episode_id: string | null;
           evidence_excerpt: string | null;
           id: string;
           source_document_id: string;
+          story_idea_id: string | null;
           workspace_id: string;
         };
         Insert: {
           claim: string;
           confidence?: number | null;
           created_at?: string;
-          episode_id: string;
+          episode_id?: string | null;
           evidence_excerpt?: string | null;
           id?: string;
           source_document_id: string;
+          story_idea_id?: string | null;
           workspace_id: string;
         };
         Update: {
           claim?: string;
           confidence?: number | null;
           created_at?: string;
-          episode_id?: string;
+          episode_id?: string | null;
           evidence_excerpt?: string | null;
           id?: string;
           source_document_id?: string;
+          story_idea_id?: string | null;
           workspace_id?: string;
         };
         Relationships: [
@@ -746,6 +749,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "source_documents";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "research_evidence_story_idea_workspace_fkey";
+            columns: ["story_idea_id", "workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "story_ideas";
+            referencedColumns: ["id", "workspace_id"];
           },
           {
             foreignKeyName: "research_evidence_workspace_id_fkey";
@@ -1074,11 +1084,11 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "source_documents_story_idea_id_fkey";
-            columns: ["story_idea_id"];
+            foreignKeyName: "source_documents_story_idea_workspace_fkey";
+            columns: ["story_idea_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "story_ideas";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
             foreignKeyName: "source_documents_workspace_id_fkey";

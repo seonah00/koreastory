@@ -8,6 +8,8 @@ const publicEnvSchema = z.object({
 
 const serverEnvSchema = publicEnvSchema.extend({
   SUPABASE_SECRET_KEY: z.string().min(1).optional(),
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  OPENAI_RESEARCH_MODEL: z.string().min(1).default("gpt-5.5"),
 });
 
 export function getPublicEnv() {
@@ -23,5 +25,7 @@ export function getServerEnv() {
   return serverEnvSchema.parse({
     ...getPublicEnv(),
     SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_RESEARCH_MODEL: process.env.OPENAI_RESEARCH_MODEL,
   });
 }

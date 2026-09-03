@@ -9,6 +9,20 @@ const migration = readFileSync(
   ),
   "utf8",
 );
+const researchMigration = readFileSync(
+  join(
+    process.cwd(),
+    "supabase/migrations/20260903041000_research_evidence_for_story_ideas.sql",
+  ),
+  "utf8",
+);
+const researchIntegrityMigration = readFileSync(
+  join(
+    process.cwd(),
+    "supabase/migrations/20260903043000_enforce_research_workspace_integrity.sql",
+  ),
+  "utf8",
+);
 
 describe("Supabase foundation migration", () => {
   it("defines every planned application table", () => {
@@ -37,5 +51,30 @@ describe("Supabase foundation migration", () => {
     expect(migration).toContain("protect_approved_record");
     expect(migration).toContain("protect_approved_script_child");
     expect(migration).toContain("protect_approved_scene_segment");
+  });
+});
+
+describe("research evidence migration", () => {
+  it("supports evidence before an episode exists", () => {
+    expect(researchMigration).toContain(
+      "alter column episode_id drop not null",
+    );
+    expect(researchMigration).toContain(
+      "story_idea_id uuid references public.story_ideas",
+    );
+    expect(researchMigration).toContain("research_evidence_context_check");
+    expect(researchMigration).toContain("research_evidence_story_idea_id_idx");
+  });
+
+  it("prevents cross-workspace source and evidence references", () => {
+    expect(researchIntegrityMigration).toContain("unique (id, workspace_id)");
+    expect(researchIntegrityMigration).toContain(
+      "foreign key (story_idea_id, workspace_id)",
+    );
+    expect(
+      researchIntegrityMigration.match(
+        /foreign key \(story_idea_id, workspace_id\)/g,
+      ),
+    ).toHaveLength(2);
   });
 });
