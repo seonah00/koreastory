@@ -38,6 +38,56 @@ body {
   color: var(--ink);
 }
 
+.auth-field {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.auth-field input {
+  height: 3rem;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 0.875rem;
+  background: var(--paper);
+  padding: 0 1rem;
+  color: var(--ink);
+  outline: none;
+  font-weight: 400;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.auth-field input:focus {
+  border-color: var(--pine);
+  box-shadow: 0 0 0 3px rgb(47 57 45 / 10%);
+}
+
+.auth-submit {
+  height: 3rem;
+  width: 100%;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--rust);
+  color: white;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.auth-error {
+  margin-top: 1.25rem;
+  border: 1px solid #e9b8a8;
+  border-radius: 0.75rem;
+  background: #fff1ec;
+  padding: 0.75rem 1rem;
+  color: #8f351f;
+  font-size: 0.8125rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

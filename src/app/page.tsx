@@ -1,16 +1,53 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { categoryPresets } from "@/domain/category-presets";
+import { logoutAction } from "@/app/(auth)/actions";
+import { createClient } from "@/server/supabase/server";
 
-const productionStages = [
-  { label: "아이디어", count: 18 },
-  { label: "리서치", count: 3 },
-  { label: "대본", count: 2 },
-  { label: "비주얼", count: 1 },
-  { label: "렌더", count: 0 },
-];
+const stageGroups = [
+  { label: "아이디어", stages: ["idea"] },
+  { label: "리서치", stages: ["research", "brief"] },
+  { label: "대본", stages: ["script", "scenes"] },
+  { label: "비주얼", stages: ["visuals", "audio"] },
+  { label: "렌더", stages: ["render", "review", "ready"] },
+] as const;
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
+
+  if (!userId) redirect("/login");
+
+  const { data: membership } = await supabase
+    .from("workspace_members")
+    .select("workspace_id, role, workspaces(name)")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
+
+  const workspaceId = membership?.workspace_id;
+  const { data: episodes } = workspaceId
+    ? await supabase
+        .from("episodes")
+        .select("stage")
+        .eq("workspace_id", workspaceId)
+    : { data: [] };
+
+  const productionStages = stageGroups.map((group) => ({
+    label: group.label,
+    count:
+      episodes?.filter((episode) =>
+        group.stages.some((stage) => stage === episode.stage),
+      ).length ?? 0,
+  }));
+  const workspaceName = membership?.workspaces?.name ?? "K-Lore Studio";
+  const email =
+    typeof claimsData.claims.email === "string"
+      ? claimsData.claims.email
+      : "Storyteller";
+
   return (
     <main className="min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
       <header className="border-b border-[var(--line)] bg-[var(--paper)]/90 backdrop-blur">
@@ -21,16 +58,26 @@ export default function Home() {
             </div>
             <div>
               <p className="font-semibold tracking-[-0.02em]">
-                K-Lore Content OS
+                {workspaceName}
               </p>
               <p className="text-xs text-[var(--muted)]">
                 Personal production studio
               </p>
             </div>
           </div>
-          <span className="rounded-full border border-[var(--line)] bg-white px-3 py-1.5 text-xs text-[var(--muted)]">
-            MVP · Foundation
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-xs text-[var(--muted)] sm:inline">
+              {email}
+            </span>
+            <form action={logoutAction}>
+              <button
+                className="rounded-full border border-[var(--line)] bg-white px-3 py-1.5 text-xs text-[var(--muted)] hover:text-[var(--ink)]"
+                type="submit"
+              >
+                로그아웃
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
@@ -166,12 +213,12 @@ export default function Home() {
                   제작 기반을 구성하고 있습니다.
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
-                  다음 단계에서 프로젝트, 에피소드, 승인 버전과 안전한 저장
-                  구조를 연결합니다.
+                  개인 Workspace와 카테고리 프리셋이 준비되었습니다. 다음
+                  단계에서 소재 발굴과 Story Brief 제작 흐름을 연결합니다.
                 </p>
               </div>
               <span className="text-sm font-medium text-[var(--gold)]">
-                TASK-002
+                TASK-004
               </span>
             </div>
           </section>

@@ -33,8 +33,11 @@ pnpm check
 - TASK-001: 제품·기술 기준 확정
 - TASK-002: Next.js 기반과 개발 품질 체계
 - TASK-003: Supabase schema, workspace RLS, private Storage 기반
-- 다음 작업: 인증과 workspace onboarding
+- TASK-004: 인증과 개인 workspace onboarding
+- 다음 작업: 카테고리별 소재 발굴과 Story Brief
 
 자세한 기술 원칙은 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)를 참고합니다.
 
 TASK-003의 데이터 구조와 검증 방법은 [docs/TASK-003_IMPLEMENTATION.md](docs/TASK-003_IMPLEMENTATION.md)에 정리되어 있습니다.
+
+TASK-004의 인증과 온보딩 구조는 [docs/TASK-004_IMPLEMENTATION.md](docs/TASK-004_IMPLEMENTATION.md)에 정리되어 있습니다.
