@@ -8,7 +8,7 @@
 
 ## Local setup
 
-필수 환경은 Node.js 20 이상과 pnpm입니다.
+필수 환경은 Node.js 22 이상과 pnpm입니다.
 
 ```bash
 pnpm install
@@ -32,6 +32,9 @@ pnpm check
 
 - TASK-001: 제품·기술 기준 확정
 - TASK-002: Next.js 기반과 개발 품질 체계
-- 다음 작업: Supabase schema, RLS, private Storage 기반
+- TASK-003: Supabase schema, workspace RLS, private Storage 기반
+- 다음 작업: 인증과 workspace onboarding
 
 자세한 기술 원칙은 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)를 참고합니다.
+
+TASK-003의 데이터 구조와 검증 방법은 [docs/TASK-003_IMPLEMENTATION.md](docs/TASK-003_IMPLEMENTATION.md)에 정리되어 있습니다.

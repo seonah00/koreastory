@@ -1,0 +1,13 @@
+begin;
+select plan(9);
+select has_schema('private','private helper schema exists');
+select has_table('public','workspaces','workspaces exists');
+select has_table('public','episodes','episodes exists');
+select has_table('public','generations','generations exists');
+select has_table('public','jobs','jobs exists');
+select is((select count(*)::integer from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity),23,'all application tables use RLS');
+select is((select public from storage.buckets where id='k-lore-assets'),false,'asset bucket is private');
+select is((select count(*)::integer from pg_policies where schemaname='storage' and tablename='objects' and policyname like 'storage_assets_%'),4,'storage CRUD policies exist');
+select is((select count(*)::integer from pg_policies where schemaname='public'),91,'explicit application policies exist');
+select * from finish();
+rollback;

@@ -1,0 +1,2 @@
+-- Intentionally empty. Workspace-specific category presets are created by the
+-- private.bootstrap_workspace trigger when a workspace is created.
