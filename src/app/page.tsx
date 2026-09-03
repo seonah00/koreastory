@@ -90,7 +90,7 @@ export default async function Home() {
               { label: "Stories", href: "/discover#saved-ideas" },
               { label: "Visuals", href: "/visual-bible" },
               { label: "Episodes" },
-              { label: "Assets" },
+              { label: "Assets", href: "/assets" },
               { label: "YouTube" },
             ].map((item, index) =>
               typeof item.href === "string" ? (

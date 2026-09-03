@@ -22,10 +22,12 @@ export type Database = {
           checksum_sha256: string | null;
           created_at: string;
           episode_id: string | null;
+          generation_id: string | null;
           id: string;
           kind: Database["public"]["Enums"]["asset_kind"];
           metadata: Json;
           mime_type: string | null;
+          scene_id: string | null;
           status: Database["public"]["Enums"]["approval_status"];
           storage_bucket: string;
           storage_path: string;
@@ -38,10 +40,12 @@ export type Database = {
           checksum_sha256?: string | null;
           created_at?: string;
           episode_id?: string | null;
+          generation_id?: string | null;
           id?: string;
           kind: Database["public"]["Enums"]["asset_kind"];
           metadata?: Json;
           mime_type?: string | null;
+          scene_id?: string | null;
           status?: Database["public"]["Enums"]["approval_status"];
           storage_bucket?: string;
           storage_path: string;
@@ -54,10 +58,12 @@ export type Database = {
           checksum_sha256?: string | null;
           created_at?: string;
           episode_id?: string | null;
+          generation_id?: string | null;
           id?: string;
           kind?: Database["public"]["Enums"]["asset_kind"];
           metadata?: Json;
           mime_type?: string | null;
+          scene_id?: string | null;
           status?: Database["public"]["Enums"]["approval_status"];
           storage_bucket?: string;
           storage_path?: string;
@@ -65,11 +71,25 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "assets_episode_id_fkey";
-            columns: ["episode_id"];
+            foreignKeyName: "assets_generation_workspace_fkey";
+            columns: ["generation_id", "workspace_id"];
+            isOneToOne: true;
+            referencedRelation: "generations";
+            referencedColumns: ["id", "workspace_id"];
+          },
+          {
+            foreignKeyName: "assets_scene_workspace_fkey";
+            columns: ["scene_id", "workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "scenes";
+            referencedColumns: ["id", "workspace_id"];
+          },
+          {
+            foreignKeyName: "assets_episode_workspace_fkey";
+            columns: ["episode_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "episodes";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
             foreignKeyName: "assets_workspace_id_fkey";

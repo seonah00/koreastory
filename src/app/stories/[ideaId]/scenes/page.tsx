@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import {
@@ -6,6 +7,7 @@ import {
   generateScenePlanAction,
   saveScenePlanVersionAction,
 } from "./actions";
+import { generateSceneImageAction } from "./image-actions";
 import { StudioShell } from "@/components/studio-shell";
 import { cameraMotionSchema } from "@/domain/scene-plan";
 import { getServerEnv } from "@/server/env";
@@ -79,16 +81,45 @@ export default async function ScenesPage({
   const approvedScript = scriptResult.data;
   const versions = versionsResult.data ?? [];
   const latest = versions[0] ?? null;
-  const { data: scenes } = latest
-    ? await supabase
-        .from("scenes")
-        .select(
-          "id, position, title, description, visual_prompt, negative_prompt, camera_motion, ambience, duration_ms, metadata",
-        )
-        .eq("workspace_id", workspaceId)
-        .eq("scene_plan_version_id", latest.id)
-        .order("position")
-    : { data: [] };
+  const [scenesResult, assetsResult] = latest
+    ? await Promise.all([
+        supabase
+          .from("scenes")
+          .select(
+            "id, position, title, description, visual_prompt, negative_prompt, camera_motion, ambience, duration_ms, metadata",
+          )
+          .eq("workspace_id", workspaceId)
+          .eq("scene_plan_version_id", latest.id)
+          .order("position"),
+        supabase
+          .from("assets")
+          .select(
+            "id, scene_id, storage_bucket, storage_path, status, created_at",
+          )
+          .eq("workspace_id", workspaceId)
+          .eq("episode_id", idea.episode_id ?? "")
+          .eq("kind", "image")
+          .order("created_at", { ascending: false }),
+      ])
+    : [{ data: [] }, { data: [] }];
+  const scenes = scenesResult.data ?? [];
+  const latestAssetByScene = new Map<
+    string,
+    NonNullable<typeof assetsResult.data>[number]
+  >();
+  for (const asset of assetsResult.data ?? []) {
+    if (asset.scene_id && !latestAssetByScene.has(asset.scene_id))
+      latestAssetByScene.set(asset.scene_id, asset);
+  }
+  const signedUrls = new Map<string, string>();
+  await Promise.all(
+    [...latestAssetByScene.values()].map(async (asset) => {
+      const { data } = await supabase.storage
+        .from(asset.storage_bucket)
+        .createSignedUrl(asset.storage_path, 3600);
+      if (data?.signedUrl) signedUrls.set(asset.id, data.signedUrl);
+    }),
+  );
   const saved = typeof query.saved === "string" ? query.saved : null;
   const error = typeof query.error === "string" ? query.error : null;
   const configured = Boolean(getServerEnv().OPENAI_API_KEY);
@@ -163,7 +194,7 @@ export default async function ScenesPage({
         </p>
       ) : null}
 
-      {latest && scenes?.length ? (
+      {latest && scenes.length ? (
         <>
           <section className="mt-9 grid gap-4 sm:grid-cols-4">
             {[
@@ -193,106 +224,144 @@ export default async function ScenesPage({
             />
             <input name="sceneCount" type="hidden" value={scenes.length} />
             <div className="space-y-5">
-              {scenes.map((scene, index) => (
-                <article
-                  className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-6"
-                  key={scene.id}
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs font-semibold tracking-wide text-[var(--rust)]">
-                      SCENE {String(index + 1).padStart(2, "0")}
-                    </p>
-                    <span className="text-xs text-[var(--muted)]">
-                      Script segments {mappedPositions(scene.metadata)}
-                    </span>
-                  </div>
-                  <input
-                    name={`scriptSegmentPositions-${index}`}
-                    type="hidden"
-                    value={mappedPositions(scene.metadata)}
-                  />
-                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                    <label className="text-xs font-medium text-[var(--muted)]">
-                      Title
-                      <input
-                        className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)]"
-                        defaultValue={scene.title ?? ""}
-                        maxLength={120}
-                        name={`title-${index}`}
-                        required
-                      />
-                    </label>
-                    <label className="text-xs font-medium text-[var(--muted)]">
-                      Ambience
-                      <input
-                        className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)]"
-                        defaultValue={scene.ambience ?? ""}
-                        maxLength={300}
-                        name={`ambience-${index}`}
-                        required
-                      />
-                    </label>
-                    <label className="text-xs font-medium text-[var(--muted)] lg:col-span-2">
-                      Visual description
-                      <textarea
-                        className="mt-2 block min-h-24 w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm leading-6 text-[var(--ink)]"
-                        defaultValue={scene.description}
-                        maxLength={1200}
-                        name={`description-${index}`}
-                        required
-                      />
-                    </label>
-                    <label className="text-xs font-medium text-[var(--muted)] lg:col-span-2">
-                      Image prompt
-                      <textarea
-                        className="mt-2 block min-h-28 w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm leading-6 text-[var(--ink)]"
-                        defaultValue={scene.visual_prompt ?? ""}
-                        maxLength={2400}
-                        name={`visualPrompt-${index}`}
-                        required
-                      />
-                    </label>
-                    <label className="text-xs font-medium text-[var(--muted)]">
-                      Negative prompt
-                      <input
-                        className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)]"
-                        defaultValue={scene.negative_prompt ?? ""}
-                        maxLength={600}
-                        name={`negativePrompt-${index}`}
-                        required
-                      />
-                    </label>
-                    <label className="text-xs font-medium text-[var(--muted)]">
-                      Camera motion
-                      <select
-                        className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)]"
-                        defaultValue={scene.camera_motion ?? "static"}
-                        name={`cameraMotion-${index}`}
-                      >
-                        {cameraMotionSchema.options.map((motion) => (
-                          <option key={motion} value={motion}>
-                            {motion}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="text-xs font-medium text-[var(--muted)]">
-                      Duration (seconds)
-                      <input
-                        className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)]"
-                        defaultValue={Math.round(
-                          (scene.duration_ms ?? 10000) / 1000,
+              {scenes.map((scene, index) => {
+                const asset = latestAssetByScene.get(scene.id);
+                const signedUrl = asset ? signedUrls.get(asset.id) : null;
+                return (
+                  <article
+                    className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-6"
+                    key={scene.id}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-xs font-semibold tracking-wide text-[var(--rust)]">
+                        SCENE {String(index + 1).padStart(2, "0")}
+                      </p>
+                      <span className="text-xs text-[var(--muted)]">
+                        Script segments {mappedPositions(scene.metadata)}
+                      </span>
+                    </div>
+                    <input
+                      name={`scriptSegmentPositions-${index}`}
+                      type="hidden"
+                      value={mappedPositions(scene.metadata)}
+                    />
+                    <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                      <div className="overflow-hidden rounded-xl border border-[var(--line)] bg-white lg:col-span-2">
+                        {signedUrl ? (
+                          <Image
+                            alt={`${scene.title ?? `Scene ${index + 1}`} generated illustration`}
+                            className="aspect-video w-full object-cover"
+                            height={1024}
+                            src={signedUrl}
+                            unoptimized
+                            width={1536}
+                          />
+                        ) : (
+                          <div className="grid aspect-video place-items-center text-sm text-[var(--muted)]">
+                            아직 생성된 이미지가 없습니다.
+                          </div>
                         )}
-                        max={600}
-                        min={10}
-                        name={`durationSeconds-${index}`}
-                        required
-                        type="number"
-                      />
-                    </label>
-                  </div>
-                </article>
-              ))}
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] px-4 py-3">
+                          <span className="text-xs text-[var(--muted)]">
+                            {asset
+                              ? `${asset.status} · 최근 생성본`
+                              : "승인된 Scene Plan에서 생성 가능"}
+                          </span>
+                          <button
+                            className="rounded-full bg-[var(--pine)] px-4 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45"
+                            disabled={
+                              latest.status !== "approved" || !configured
+                            }
+                            formAction={generateSceneImageAction}
+                            name="sceneId"
+                            value={scene.id}
+                          >
+                            {asset ? "이미지 다시 생성" : "이미지 생성"}
+                          </button>
+                        </div>
+                      </div>
+                      <label className="text-xs font-medium text-[var(--muted)]">
+                        Title
+                        <input
+                          className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)]"
+                          defaultValue={scene.title ?? ""}
+                          maxLength={120}
+                          name={`title-${index}`}
+                          required
+                        />
+                      </label>
+                      <label className="text-xs font-medium text-[var(--muted)]">
+                        Ambience
+                        <input
+                          className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)]"
+                          defaultValue={scene.ambience ?? ""}
+                          maxLength={300}
+                          name={`ambience-${index}`}
+                          required
+                        />
+                      </label>
+                      <label className="text-xs font-medium text-[var(--muted)] lg:col-span-2">
+                        Visual description
+                        <textarea
+                          className="mt-2 block min-h-24 w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm leading-6 text-[var(--ink)]"
+                          defaultValue={scene.description}
+                          maxLength={1200}
+                          name={`description-${index}`}
+                          required
+                        />
+                      </label>
+                      <label className="text-xs font-medium text-[var(--muted)] lg:col-span-2">
+                        Image prompt
+                        <textarea
+                          className="mt-2 block min-h-28 w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm leading-6 text-[var(--ink)]"
+                          defaultValue={scene.visual_prompt ?? ""}
+                          maxLength={2400}
+                          name={`visualPrompt-${index}`}
+                          required
+                        />
+                      </label>
+                      <label className="text-xs font-medium text-[var(--muted)]">
+                        Negative prompt
+                        <input
+                          className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)]"
+                          defaultValue={scene.negative_prompt ?? ""}
+                          maxLength={600}
+                          name={`negativePrompt-${index}`}
+                          required
+                        />
+                      </label>
+                      <label className="text-xs font-medium text-[var(--muted)]">
+                        Camera motion
+                        <select
+                          className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)]"
+                          defaultValue={scene.camera_motion ?? "static"}
+                          name={`cameraMotion-${index}`}
+                        >
+                          {cameraMotionSchema.options.map((motion) => (
+                            <option key={motion} value={motion}>
+                              {motion}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="text-xs font-medium text-[var(--muted)]">
+                        Duration (seconds)
+                        <input
+                          className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)]"
+                          defaultValue={Math.round(
+                            (scene.duration_ms ?? 10000) / 1000,
+                          )}
+                          max={600}
+                          min={10}
+                          name={`durationSeconds-${index}`}
+                          required
+                          type="number"
+                        />
+                      </label>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5">
               <p className="text-sm text-[var(--muted)]">

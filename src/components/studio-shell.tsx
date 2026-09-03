@@ -9,7 +9,7 @@ const navigation = [
   { label: "Stories", href: "/discover#saved-ideas" },
   { label: "Visuals", href: "/visual-bible" },
   { label: "Episodes" },
-  { label: "Assets" },
+  { label: "Assets", href: "/assets" },
   { label: "YouTube" },
 ] as const;
 
@@ -19,7 +19,7 @@ export function StudioShell({
   email,
   workspaceName,
 }: {
-  active: "Dashboard" | "Discover" | "Stories" | "Visuals";
+  active: "Dashboard" | "Discover" | "Stories" | "Visuals" | "Assets";
   children: ReactNode;
   email: string;
   workspaceName: string;

@@ -12,6 +12,7 @@ const serverEnvSchema = publicEnvSchema.extend({
   OPENAI_RESEARCH_MODEL: z.string().min(1).default("gpt-5.5"),
   OPENAI_SCRIPT_MODEL: z.string().min(1).default("gpt-5.5"),
   OPENAI_SCENE_MODEL: z.string().min(1).default("gpt-5.5"),
+  OPENAI_IMAGE_MODEL: z.string().min(1).default("gpt-image-2"),
 });
 
 export function getPublicEnv() {
@@ -31,5 +32,6 @@ export function getServerEnv() {
     OPENAI_RESEARCH_MODEL: process.env.OPENAI_RESEARCH_MODEL,
     OPENAI_SCRIPT_MODEL: process.env.OPENAI_SCRIPT_MODEL,
     OPENAI_SCENE_MODEL: process.env.OPENAI_SCENE_MODEL,
+    OPENAI_IMAGE_MODEL: process.env.OPENAI_IMAGE_MODEL,
   });
 }

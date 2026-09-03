@@ -51,6 +51,20 @@ const visualBibleMigration = readFileSync(
   ),
   "utf8",
 );
+const sceneImageAssetsMigration = readFileSync(
+  join(
+    process.cwd(),
+    "supabase/migrations/20260903070000_scene_image_assets.sql",
+  ),
+  "utf8",
+);
+const sceneImageAssetIndexesMigration = readFileSync(
+  join(
+    process.cwd(),
+    "supabase/migrations/20260903071000_index_scene_image_asset_relationships.sql",
+  ),
+  "utf8",
+);
 
 describe("Supabase foundation migration", () => {
   it("defines every planned application table", () => {
@@ -200,5 +214,37 @@ describe("visual bible migration", () => {
     expect(visualBibleMigration).toContain("security invoker");
     expect(visualBibleMigration).toMatch(/from public, anon;/);
     expect(visualBibleMigration).toMatch(/to authenticated;/);
+  });
+});
+
+describe("scene image asset migration", () => {
+  it("links image assets to scenes and generation records safely", () => {
+    expect(sceneImageAssetsMigration).toContain("assets_scene_workspace_fkey");
+    expect(sceneImageAssetsMigration).toContain(
+      "assets_episode_workspace_fkey",
+    );
+    expect(sceneImageAssetsMigration).toContain(
+      "assets_generation_workspace_fkey",
+    );
+    expect(sceneImageAssetsMigration).toContain(
+      "on delete set null (scene_id)",
+    );
+    expect(sceneImageAssetsMigration).toContain(
+      "on delete set null (generation_id)",
+    );
+  });
+
+  it("allows only one persisted asset for a generation", () => {
+    expect(sceneImageAssetsMigration).toContain(
+      "create unique index assets_generation_unique",
+    );
+  });
+
+  it("indexes every composite Asset relationship", () => {
+    for (const relationship of ["episode", "generation", "scene"]) {
+      expect(sceneImageAssetIndexesMigration).toContain(
+        `assets_${relationship}_workspace_fkey_idx`,
+      );
+    }
   });
 });
