@@ -14,6 +14,98 @@ export type Database = {
   };
   public: {
     Tables: {
+      audio_layers: {
+        Row: {
+          approved_at: string | null;
+          approved_by: string | null;
+          asset_id: string;
+          created_at: string;
+          end_ms: number | null;
+          episode_id: string;
+          fade_in_ms: number;
+          fade_out_ms: number;
+          id: string;
+          label: string;
+          layer_type: string;
+          loop: boolean;
+          notes: string | null;
+          scene_id: string | null;
+          start_ms: number;
+          status: Database["public"]["Enums"]["approval_status"];
+          volume_db: number;
+          workspace_id: string;
+        };
+        Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          asset_id: string;
+          created_at?: string;
+          end_ms?: number | null;
+          episode_id: string;
+          fade_in_ms?: number;
+          fade_out_ms?: number;
+          id?: string;
+          label: string;
+          layer_type: string;
+          loop?: boolean;
+          notes?: string | null;
+          scene_id?: string | null;
+          start_ms?: number;
+          status?: Database["public"]["Enums"]["approval_status"];
+          volume_db?: number;
+          workspace_id: string;
+        };
+        Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          asset_id?: string;
+          created_at?: string;
+          end_ms?: number | null;
+          episode_id?: string;
+          fade_in_ms?: number;
+          fade_out_ms?: number;
+          id?: string;
+          label?: string;
+          layer_type?: string;
+          loop?: boolean;
+          notes?: string | null;
+          scene_id?: string | null;
+          start_ms?: number;
+          status?: Database["public"]["Enums"]["approval_status"];
+          volume_db?: number;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "audio_layers_asset_workspace_fkey";
+            columns: ["asset_id", "workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "assets";
+            referencedColumns: ["id", "workspace_id"];
+          },
+          {
+            foreignKeyName: "audio_layers_episode_workspace_fkey";
+            columns: ["episode_id", "workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "episodes";
+            referencedColumns: ["id", "workspace_id"];
+          },
+          {
+            foreignKeyName: "audio_layers_scene_workspace_fkey";
+            columns: ["scene_id", "workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "scenes";
+            referencedColumns: ["id", "workspace_id"];
+          },
+          {
+            foreignKeyName: "audio_layers_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       assets: {
         Row: {
           approved_at: string | null;

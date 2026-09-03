@@ -66,6 +66,14 @@ const narrationAudioAssetsMigration = readFileSync(
   "supabase/migrations/20260903073000_narration_audio_assets.sql",
   "utf8",
 );
+const audioLayerWorkflowMigration = readFileSync(
+  "supabase/migrations/20260903074000_audio_layer_workflow.sql",
+  "utf8",
+);
+const audioLayerDefaultsMigration = readFileSync(
+  "supabase/migrations/20260903075000_harden_audio_layer_defaults.sql",
+  "utf8",
+);
 const sceneImageAssetIndexesMigration = readFileSync(
   join(
     process.cwd(),
@@ -266,6 +274,41 @@ describe("scene image asset migration", () => {
     );
     expect(narrationAudioAssetsMigration).toContain(
       "assets_script_segment_workspace_fkey_idx",
+    );
+  });
+
+  it("protects workspace-scoped audio timeline layers", () => {
+    expect(audioLayerWorkflowMigration).toContain(
+      "create table public.audio_layers",
+    );
+    for (const relationship of ["episode", "scene", "asset"]) {
+      expect(audioLayerWorkflowMigration).toContain(
+        `audio_layers_${relationship}_workspace_fkey`,
+      );
+    }
+    expect(audioLayerWorkflowMigration).toContain(
+      "alter table public.audio_layers enable row level security",
+    );
+    for (const operation of ["select", "insert", "update", "delete"]) {
+      expect(audioLayerWorkflowMigration).toContain(
+        `audio_layers_${operation}`,
+      );
+    }
+    expect(audioLayerWorkflowMigration).toContain("audio_layers_immutable");
+  });
+
+  it("indexes audio layer relationships and defaults future category presets", () => {
+    expect(audioLayerDefaultsMigration).toContain(
+      "audio_layers_episode_workspace_fkey_idx",
+    );
+    expect(audioLayerDefaultsMigration).toContain(
+      "audio_layers_approved_by_fkey_idx",
+    );
+    expect(audioLayerDefaultsMigration).toContain(
+      "function private.apply_category_audio_defaults",
+    );
+    expect(audioLayerDefaultsMigration).toContain(
+      "category_presets_audio_defaults",
     );
   });
 

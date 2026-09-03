@@ -42,7 +42,8 @@ pnpm check
 - TASK-010: Scene Prompt 조합, 실제 AI 이미지 생성, Asset Library
 - TASK-011: Halmeoni·캐릭터 Reference 등록, 승인, 이미지 편집 기반 일관성 강화
 - TASK-012: Halmeoni Voice Bible 기반 Segment TTS와 Audio Asset workflow
-- 다음 작업: BGM·SFX·Ambience Audio Layer 기획과 Asset 연결
+- TASK-013: 카테고리별 BGM·SFX·Ambience Sound Library와 Timeline Layer
+- 다음 작업: Render Manifest 생성과 Remotion 영상 자동 조립
 
 자세한 기술 원칙은 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)를 참고합니다.
 
@@ -65,3 +66,5 @@ TASK-010의 이미지 생성과 Asset 저장 구조는 [docs/TASK-010_IMPLEMENTA
 TASK-011의 Reference 이미지와 이미지 편집 구조는 [docs/TASK-011_IMPLEMENTATION.md](docs/TASK-011_IMPLEMENTATION.md)에 정리되어 있습니다.
 
 TASK-012의 Halmeoni Narration과 Audio Asset 구조는 [docs/TASK-012_IMPLEMENTATION.md](docs/TASK-012_IMPLEMENTATION.md)에 정리되어 있습니다.
+
+TASK-013의 Sound Library와 Audio Timeline 구조는 [docs/TASK-013_IMPLEMENTATION.md](docs/TASK-013_IMPLEMENTATION.md)에 정리되어 있습니다.

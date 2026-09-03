@@ -5,11 +5,36 @@ import {
   approveNarrationAudioAction,
   generateNarrationAudioAction,
 } from "./actions";
+import {
+  approveAudioLayerAction,
+  approveSoundAssetAction,
+  createAudioLayerAction,
+  uploadSoundAssetAction,
+} from "./layer-actions";
 import { StudioShell } from "@/components/studio-shell";
 import { getServerEnv } from "@/server/env";
+import type { Json } from "@/server/supabase/database.types";
 import { requireWorkspace } from "@/server/workspace";
 
 export const maxDuration = 300;
+
+function metadataText(value: Json, key: string) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const item = value[key];
+    return typeof item === "string" ? item : null;
+  }
+  return null;
+}
+
+function ruleText(value: Json | undefined, key: string) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const item = value[key];
+    return typeof item === "string" || typeof item === "number"
+      ? String(item)
+      : "";
+  }
+  return "";
+}
 
 export default async function AudioStudioPage({
   params,
@@ -26,7 +51,7 @@ export default async function AudioStudioPage({
   const { supabase, workspaceId, workspaceName, email } = context;
   const { data: idea } = await supabase
     .from("story_ideas")
-    .select("id, title, episode_id, category_presets(name)")
+    .select("id, title, episode_id, category_presets(name, slug, audio_rules)")
     .eq("workspace_id", workspaceId)
     .eq("id", ideaId)
     .maybeSingle();
@@ -83,6 +108,34 @@ export default async function AudioStudioPage({
     string,
     NonNullable<typeof assetsResult.data>[number]
   >();
+  const [soundResult, layersResult, scenesResult] = idea.episode_id
+    ? await Promise.all([
+        supabase
+          .from("assets")
+          .select(
+            "id, storage_bucket, storage_path, status, bytes, metadata, created_at",
+          )
+          .eq("workspace_id", workspaceId)
+          .eq("kind", "audio")
+          .contains("metadata", { purpose: "sound_library" })
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("audio_layers")
+          .select(
+            "id, asset_id, scene_id, layer_type, label, start_ms, end_ms, volume_db, fade_in_ms, fade_out_ms, loop, notes, status, assets(metadata)",
+          )
+          .eq("workspace_id", workspaceId)
+          .eq("episode_id", idea.episode_id)
+          .order("start_ms"),
+        supabase
+          .from("scenes")
+          .select("id, position, title, scene_plan_versions!inner(episode_id)")
+          .eq("workspace_id", workspaceId)
+          .eq("scene_plan_versions.episode_id", idea.episode_id)
+          .eq("scene_plan_versions.script_version_id", script?.id ?? "")
+          .order("position"),
+      ])
+    : [{ data: [] }, { data: [] }, { data: [] }];
   for (const asset of assetsResult.data ?? []) {
     if (
       asset.script_segment_id &&
@@ -97,6 +150,15 @@ export default async function AudioStudioPage({
         .from(asset.storage_bucket)
         .createSignedUrl(asset.storage_path, 3600);
       if (data?.signedUrl) signedUrls.set(asset.id, data.signedUrl);
+    }),
+  );
+  const soundUrls = new Map<string, string>();
+  await Promise.all(
+    (soundResult.data ?? []).map(async (asset) => {
+      const { data } = await supabase.storage
+        .from(asset.storage_bucket)
+        .createSignedUrl(asset.storage_path, 3600);
+      if (data?.signedUrl) soundUrls.set(asset.id, data.signedUrl);
     }),
   );
   const configured = Boolean(getServerEnv().OPENAI_API_KEY);
@@ -183,6 +245,303 @@ export default async function AudioStudioPage({
           </div>
         ))}
       </section>
+
+      <section className="mt-10 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5">
+        <p className="text-xs font-semibold tracking-wide text-[var(--rust)]">
+          CATEGORY AUDIO PRESET
+        </p>
+        <h2 className="mt-1 text-xl font-semibold">
+          {idea.category_presets?.name} 추천 사운드
+        </h2>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {["bgm", "ambience", "sfx"].map((key) => (
+            <div className="rounded-xl bg-white p-4" key={key}>
+              <p className="text-xs font-semibold text-[var(--rust)] uppercase">
+                {key}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                {ruleText(idea.category_presets?.audio_rules, key) ||
+                  "프리셋을 설정해 주세요."}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-10" aria-labelledby="sound-library-title">
+        <h2 id="sound-library-title" className="text-2xl font-semibold">
+          Sound Library
+        </h2>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          직접 소유했거나 사용 허가를 확인한 음원만 등록하세요. 승인된 음원만
+          Timeline Layer로 사용할 수 있습니다.
+        </p>
+        <form
+          action={uploadSoundAssetAction}
+          className="mt-5 grid gap-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5 md:grid-cols-2"
+          encType="multipart/form-data"
+        >
+          <input name="ideaId" type="hidden" value={idea.id} />
+          <label className="text-xs font-medium">
+            음원 파일 (MP3·WAV, 최대 25MB)
+            <input
+              accept="audio/mpeg,audio/wav"
+              className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+              name="soundFile"
+              required
+              type="file"
+            />
+          </label>
+          <label className="text-xs font-medium">
+            이름
+            <input
+              className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+              maxLength={120}
+              name="title"
+              placeholder="Steady Hanok Rain"
+              required
+            />
+          </label>
+          <label className="text-xs font-medium">
+            사용 권리
+            <select
+              className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+              name="rights"
+            >
+              <option value="owned">직접 제작·소유</option>
+              <option value="licensed">라이선스 구매</option>
+              <option value="public_domain">Public domain</option>
+              <option value="cc0">CC0</option>
+            </select>
+          </label>
+          <label className="text-xs font-medium">
+            출처 URL
+            <input
+              className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+              name="sourceUrl"
+              placeholder="https://..."
+              type="url"
+            />
+          </label>
+          <label className="text-xs font-medium md:col-span-2">
+            라이선스·저작자 표기
+            <input
+              className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+              maxLength={500}
+              name="attribution"
+              placeholder="구매처, 라이선스 번호 또는 필요한 크레딧"
+            />
+          </label>
+          <button
+            className="justify-self-start rounded-full bg-[var(--rust)] px-5 py-2.5 text-sm font-semibold text-white"
+            type="submit"
+          >
+            Sound Library에 등록
+          </button>
+        </form>
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          {(soundResult.data ?? []).map((asset) => (
+            <article
+              className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-4"
+              key={asset.id}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-semibold">
+                    {metadataText(asset.metadata, "title") ?? "Sound Asset"}
+                  </h3>
+                  <p className="mt-1 text-xs text-[var(--muted)]">
+                    {metadataText(asset.metadata, "rights")} · {asset.status} ·{" "}
+                    {asset.bytes
+                      ? `${Math.round(asset.bytes / 1024 / 1024)}MB`
+                      : "audio"}
+                  </p>
+                </div>
+                {asset.status === "draft" ? (
+                  <form action={approveSoundAssetAction}>
+                    <input name="ideaId" type="hidden" value={idea.id} />
+                    <button
+                      className="rounded-full border border-[var(--pine)] px-3 py-1.5 text-xs font-semibold text-[var(--pine)]"
+                      name="assetId"
+                      value={asset.id}
+                    >
+                      승인·잠금
+                    </button>
+                  </form>
+                ) : null}
+              </div>
+              {soundUrls.get(asset.id) ? (
+                <audio
+                  className="mt-3 w-full"
+                  controls
+                  preload="metadata"
+                  src={soundUrls.get(asset.id)}
+                >
+                  오디오 재생을 지원하지 않는 브라우저입니다.
+                </audio>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-10" aria-labelledby="layer-title">
+        <h2 id="layer-title" className="text-2xl font-semibold">
+          Audio Timeline Layers
+        </h2>
+        <form
+          action={createAudioLayerAction}
+          className="mt-5 grid gap-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5 md:grid-cols-3"
+        >
+          <input name="ideaId" type="hidden" value={idea.id} />
+          <label className="text-xs font-medium md:col-span-2">
+            승인된 Sound Asset
+            <select
+              className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+              name="assetId"
+              required
+            >
+              <option value="">선택</option>
+              {(soundResult.data ?? [])
+                .filter((asset) => asset.status === "approved")
+                .map((asset) => (
+                  <option key={asset.id} value={asset.id}>
+                    {metadataText(asset.metadata, "title") ?? asset.id}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label className="text-xs font-medium">
+            Layer
+            <select
+              className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+              name="layerType"
+            >
+              <option value="bgm">BGM</option>
+              <option value="ambience">Ambience</option>
+              <option value="sfx">SFX</option>
+            </select>
+          </label>
+          <label className="text-xs font-medium">
+            표시 이름
+            <input
+              className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+              maxLength={120}
+              name="label"
+              required
+            />
+          </label>
+          <label className="text-xs font-medium">
+            Scene (선택)
+            <select
+              className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+              name="sceneId"
+            >
+              <option value="">전체 Timeline</option>
+              {(scenesResult.data ?? []).map((scene) => (
+                <option key={scene.id} value={scene.id}>
+                  {scene.position + 1}. {scene.title ?? "Untitled"}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs font-medium">
+            Volume dB
+            <input
+              className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+              defaultValue={-24}
+              max={6}
+              min={-60}
+              name="volumeDb"
+              required
+              step="0.5"
+              type="number"
+            />
+          </label>
+          {[
+            ["startSeconds", "시작(초)", 0],
+            ["endSeconds", "종료(초, 선택)", ""],
+            ["fadeInSeconds", "Fade in(초)", 1],
+            ["fadeOutSeconds", "Fade out(초)", 1],
+          ].map(([name, label, value]) => (
+            <label className="text-xs font-medium" key={name}>
+              {label}
+              <input
+                className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+                defaultValue={value}
+                min={0}
+                name={String(name)}
+                step="0.1"
+                type="number"
+              />
+            </label>
+          ))}
+          <label className="flex items-center gap-2 self-end py-3 text-sm">
+            <input name="loop" type="checkbox" /> 반복 재생
+          </label>
+          <label className="text-xs font-medium md:col-span-3">
+            메모
+            <input
+              className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+              maxLength={1000}
+              name="notes"
+            />
+          </label>
+          <button
+            className="justify-self-start rounded-full bg-[var(--pine)] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-45"
+            disabled={
+              !(soundResult.data ?? []).some(
+                (asset) => asset.status === "approved",
+              )
+            }
+            type="submit"
+          >
+            Timeline에 추가
+          </button>
+        </form>
+        <div className="mt-5 space-y-3">
+          {(layersResult.data ?? []).map((layer) => (
+            <article
+              className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--line)] bg-white px-4 py-3"
+              key={layer.id}
+            >
+              <div>
+                <p className="text-xs font-semibold text-[var(--rust)] uppercase">
+                  {layer.layer_type} · {layer.status}
+                </p>
+                <h3 className="mt-1 font-semibold">{layer.label}</h3>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  {(layer.start_ms / 1000).toFixed(1)}s–
+                  {layer.end_ms
+                    ? `${(layer.end_ms / 1000).toFixed(1)}s`
+                    : "end"}
+                  {" · "}
+                  {layer.volume_db}dB · fade {layer.fade_in_ms / 1000}/
+                  {layer.fade_out_ms / 1000}s {layer.loop ? "· loop" : ""}
+                </p>
+              </div>
+              {layer.status === "draft" ? (
+                <form action={approveAudioLayerAction}>
+                  <input name="ideaId" type="hidden" value={idea.id} />
+                  <button
+                    className="rounded-full border border-[var(--pine)] px-3 py-1.5 text-xs font-semibold text-[var(--pine)]"
+                    name="layerId"
+                    value={layer.id}
+                  >
+                    Layer 승인·잠금
+                  </button>
+                </form>
+              ) : (
+                <span className="rounded-full bg-[#eef7ec] px-3 py-1.5 text-xs text-[#31572d]">
+                  Approved
+                </span>
+              )}
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <h2 className="mt-12 text-2xl font-semibold">Narration Segments</h2>
       <div className="mt-8 space-y-4">
         {(segmentsResult.data ?? []).map((segment) => {
           const asset = latestAssetBySegment.get(segment.id);
