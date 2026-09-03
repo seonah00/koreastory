@@ -74,6 +74,10 @@ const audioLayerDefaultsMigration = readFileSync(
   "supabase/migrations/20260903075000_harden_audio_layer_defaults.sql",
   "utf8",
 );
+const renderManifestWorkflowMigration = readFileSync(
+  "supabase/migrations/20260903080000_render_manifest_workflow.sql",
+  "utf8",
+);
 const sceneImageAssetIndexesMigration = readFileSync(
   join(
     process.cwd(),
@@ -310,6 +314,25 @@ describe("scene image asset migration", () => {
     expect(audioLayerDefaultsMigration).toContain(
       "category_presets_audio_defaults",
     );
+  });
+
+  it("creates render versions only from approved workspace-safe inputs", () => {
+    expect(renderManifestWorkflowMigration).toContain(
+      "function public.create_render_version",
+    );
+    expect(renderManifestWorkflowMigration).toContain(
+      "approved scene plan required",
+    );
+    expect(renderManifestWorkflowMigration).toContain(
+      "every image and narration asset must be approved",
+    );
+    for (const relationship of ["episode", "scene_plan", "output_asset"]) {
+      expect(renderManifestWorkflowMigration).toContain(
+        `render_versions_${relationship}_workspace_fkey`,
+      );
+    }
+    expect(renderManifestWorkflowMigration).toContain("security invoker");
+    expect(renderManifestWorkflowMigration).toMatch(/to authenticated;/);
   });
 
   it("allows only one persisted asset for a generation", () => {

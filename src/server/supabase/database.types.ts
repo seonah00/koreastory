@@ -794,25 +794,25 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "render_versions_episode_id_fkey";
-            columns: ["episode_id"];
+            foreignKeyName: "render_versions_episode_workspace_fkey";
+            columns: ["episode_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "episodes";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
-            foreignKeyName: "render_versions_output_asset_id_fkey";
-            columns: ["output_asset_id"];
+            foreignKeyName: "render_versions_output_asset_workspace_fkey";
+            columns: ["output_asset_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "assets";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
-            foreignKeyName: "render_versions_scene_plan_version_id_fkey";
-            columns: ["scene_plan_version_id"];
+            foreignKeyName: "render_versions_scene_plan_workspace_fkey";
+            columns: ["scene_plan_version_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "scene_plan_versions";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
             foreignKeyName: "render_versions_workspace_id_fkey";
@@ -1407,6 +1407,17 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      create_render_version: {
+        Args: {
+          p_episode_id: string;
+          p_manifest: Json;
+          p_scene_plan_version_id: string;
+        };
+        Returns: {
+          render_version_id: string;
+          version: number;
+        }[];
+      };
       create_bible_entry_version: {
         Args: {
           p_content: Json;

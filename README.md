@@ -43,7 +43,8 @@ pnpm check
 - TASK-011: Halmeoni·캐릭터 Reference 등록, 승인, 이미지 편집 기반 일관성 강화
 - TASK-012: Halmeoni Voice Bible 기반 Segment TTS와 Audio Asset workflow
 - TASK-013: 카테고리별 BGM·SFX·Ambience Sound Library와 Timeline Layer
-- 다음 작업: Render Manifest 생성과 Remotion 영상 자동 조립
+- TASK-014: 승인 자산 기반 Render Manifest와 Remotion 영상 자동 조립
+- 다음 작업: 비동기 MP4 Render Worker와 결과 Video Asset 연결
 
 자세한 기술 원칙은 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)를 참고합니다.
 

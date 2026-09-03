@@ -180,6 +180,12 @@ export default async function AudioStudioPage({
         >
           Halmeoni Voice Bible 설정 →
         </Link>
+        <Link
+          className="text-sm font-medium text-[var(--pine)] hover:underline"
+          href={`/stories/${idea.id}/render`}
+        >
+          Render Studio →
+        </Link>
       </div>
       <div className="mt-6">
         <p className="text-sm font-medium text-[var(--rust)]">
