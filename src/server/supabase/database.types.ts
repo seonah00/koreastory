@@ -1275,7 +1275,17 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      create_story_brief_from_idea: {
+        Args: {
+          p_content: Json;
+          p_idea_id: string;
+          p_target_duration_seconds: number;
+        };
+        Returns: {
+          brief_id: string;
+          episode_id: string;
+        }[];
+      };
     };
     Enums: {
       approval_status: "draft" | "approved" | "rejected";

@@ -85,25 +85,31 @@ export default async function Home() {
         <aside className="hidden lg:block">
           <nav aria-label="스튜디오 메뉴" className="sticky top-8 space-y-1">
             {[
-              "Dashboard",
-              "Discover",
-              "Stories",
-              "Visuals",
-              "Episodes",
-              "Assets",
-              "YouTube",
-            ].map((item, index) => (
-              <span
-                className={`block rounded-xl px-4 py-3 text-sm ${
-                  index === 0
-                    ? "bg-[var(--pine)] font-medium text-white"
-                    : "text-[var(--muted)]"
-                }`}
-                key={item}
-              >
-                {item}
-              </span>
-            ))}
+              { label: "Dashboard", href: "/" },
+              { label: "Discover", href: "/discover" },
+              { label: "Stories", href: "/discover#saved-ideas" },
+              { label: "Visuals" },
+              { label: "Episodes" },
+              { label: "Assets" },
+              { label: "YouTube" },
+            ].map((item, index) =>
+              typeof item.href === "string" ? (
+                <Link
+                  className={`block rounded-xl px-4 py-3 text-sm ${index === 0 ? "bg-[var(--pine)] font-medium text-white" : "text-[var(--muted)] hover:bg-white/60"}`}
+                  href={item.href}
+                  key={item.label}
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <span
+                  className="block rounded-xl px-4 py-3 text-sm text-[var(--muted)]/55"
+                  key={item.label}
+                >
+                  {item.label}
+                </span>
+              ),
+            )}
           </nav>
         </aside>
 
@@ -121,7 +127,7 @@ export default async function Home() {
             </div>
             <Link
               className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--rust)] px-6 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
-              href="#categories"
+              href="/discover"
             >
               새 에피소드 만들기
             </Link>
@@ -213,12 +219,12 @@ export default async function Home() {
                   제작 기반을 구성하고 있습니다.
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
-                  개인 Workspace와 카테고리 프리셋이 준비되었습니다. 다음
-                  단계에서 소재 발굴과 Story Brief 제작 흐름을 연결합니다.
+                  카테고리별 소재 발굴과 Story Brief 제작 흐름이 준비되었습니다.
+                  이제 저장한 Brief를 바탕으로 영어 대본을 제작할 수 있습니다.
                 </p>
               </div>
               <span className="text-sm font-medium text-[var(--gold)]">
-                TASK-004
+                TASK-005
               </span>
             </div>
           </section>
