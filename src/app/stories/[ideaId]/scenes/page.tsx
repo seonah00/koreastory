@@ -143,6 +143,12 @@ export default async function ScenesPage({
         >
           Visual Bible 설정 →
         </Link>
+        <Link
+          className="text-sm font-medium text-[var(--pine)] hover:underline"
+          href={`/stories/${idea.id}/audio`}
+        >
+          Narration Audio →
+        </Link>
       </div>
       <div className="mt-6 flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
         <div>

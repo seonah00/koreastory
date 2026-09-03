@@ -62,6 +62,10 @@ const bibleReferenceAssetsMigration = readFileSync(
   "supabase/migrations/20260903072000_bible_reference_assets.sql",
   "utf8",
 );
+const narrationAudioAssetsMigration = readFileSync(
+  "supabase/migrations/20260903073000_narration_audio_assets.sql",
+  "utf8",
+);
 const sceneImageAssetIndexesMigration = readFileSync(
   join(
     process.cwd(),
@@ -250,6 +254,18 @@ describe("scene image asset migration", () => {
     );
     expect(bibleReferenceAssetsMigration).toContain(
       "bible_references_asset_workspace_fkey",
+    );
+  });
+
+  it("links narration assets to script segments in the same workspace", () => {
+    expect(scenePlanWorkflowMigration).toContain(
+      "script_segments_id_workspace_unique",
+    );
+    expect(narrationAudioAssetsMigration).toContain(
+      "assets_script_segment_workspace_fkey",
+    );
+    expect(narrationAudioAssetsMigration).toContain(
+      "assets_script_segment_workspace_fkey_idx",
     );
   });
 

@@ -29,10 +29,10 @@ export default async function AssetsPage({
   const { data } = await supabase
     .from("assets")
     .select(
-      "id, episode_id, scene_id, storage_bucket, storage_path, status, metadata, bytes, created_at, episodes(working_title)",
+      "id, episode_id, scene_id, script_segment_id, kind, storage_bucket, storage_path, status, metadata, bytes, created_at, episodes(working_title)",
     )
     .eq("workspace_id", workspaceId)
-    .eq("kind", "image")
+    .in("kind", ["image", "audio"])
     .order("created_at", { ascending: false })
     .limit(100);
   const assets = await Promise.all(
@@ -50,11 +50,11 @@ export default async function AssetsPage({
     <StudioShell active="Assets" email={email} workspaceName={workspaceName}>
       <p className="text-sm font-medium text-[var(--rust)]">ASSET LIBRARY</p>
       <h1 className="mt-2 text-4xl font-semibold tracking-[-0.04em]">
-        생성 이미지를 선택하고 재사용하세요.
+        이미지와 음성을 선택하고 재사용하세요.
       </h1>
       <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">
-        모든 생성본은 비공개 Storage에 즉시 보존됩니다. 마음에 드는 이미지만
-        승인하면 해당 버전이 잠깁니다.
+        모든 생성본은 비공개 Storage에 즉시 보존됩니다. 마음에 드는 이미지와
+        음성만 승인하면 해당 버전이 잠깁니다.
       </p>
       {saved ? (
         <p
@@ -76,7 +76,7 @@ export default async function AssetsPage({
               className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--paper)]"
               key={asset.id}
             >
-              {asset.signedUrl ? (
+              {asset.signedUrl && asset.kind === "image" ? (
                 <Image
                   alt={
                     metaText(asset.metadata, "title") ??
@@ -88,6 +88,17 @@ export default async function AssetsPage({
                   unoptimized
                   width={1536}
                 />
+              ) : asset.signedUrl && asset.kind === "audio" ? (
+                <div className="grid min-h-44 place-items-center bg-white p-5">
+                  <audio
+                    className="w-full"
+                    controls
+                    preload="metadata"
+                    src={asset.signedUrl}
+                  >
+                    오디오 재생을 지원하지 않는 브라우저입니다.
+                  </audio>
+                </div>
               ) : (
                 <div className="grid aspect-video place-items-center text-sm text-[var(--muted)]">
                   미리보기를 불러올 수 없습니다.
@@ -98,14 +109,17 @@ export default async function AssetsPage({
                   {asset.episodes?.working_title ?? "K-Lore Episode"}
                 </p>
                 <h2 className="mt-1 font-semibold">
-                  {metaText(asset.metadata, "title") ?? "Generated Scene"}
+                  {metaText(asset.metadata, "title") ??
+                    (asset.kind === "audio"
+                      ? "Halmeoni Narration"
+                      : "Generated Scene")}
                 </h2>
                 <div className="mt-4 flex items-center justify-between gap-3">
                   <span className="text-xs text-[var(--muted)] capitalize">
                     {asset.status} ·{" "}
                     {asset.bytes
                       ? `${Math.round(asset.bytes / 1024)} KB`
-                      : "image"}
+                      : asset.kind}
                   </span>
                   {asset.status === "draft" ? (
                     <form action={approveAssetAction}>
@@ -137,11 +151,9 @@ export default async function AssetsPage({
         </div>
       ) : (
         <section className="mt-10 rounded-2xl border border-dashed border-[var(--line)] px-6 py-16 text-center">
-          <h2 className="text-xl font-semibold">
-            아직 이미지 Asset이 없습니다.
-          </h2>
+          <h2 className="text-xl font-semibold">아직 Asset이 없습니다.</h2>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Scene Plan을 승인한 뒤 각 Scene에서 이미지를 생성하세요.
+            Scene 이미지 또는 Narration Audio를 생성하세요.
           </p>
         </section>
       )}

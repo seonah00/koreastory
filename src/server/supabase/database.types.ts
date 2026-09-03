@@ -28,6 +28,7 @@ export type Database = {
           metadata: Json;
           mime_type: string | null;
           scene_id: string | null;
+          script_segment_id: string | null;
           status: Database["public"]["Enums"]["approval_status"];
           storage_bucket: string;
           storage_path: string;
@@ -46,6 +47,7 @@ export type Database = {
           metadata?: Json;
           mime_type?: string | null;
           scene_id?: string | null;
+          script_segment_id?: string | null;
           status?: Database["public"]["Enums"]["approval_status"];
           storage_bucket?: string;
           storage_path: string;
@@ -64,6 +66,7 @@ export type Database = {
           metadata?: Json;
           mime_type?: string | null;
           scene_id?: string | null;
+          script_segment_id?: string | null;
           status?: Database["public"]["Enums"]["approval_status"];
           storage_bucket?: string;
           storage_path?: string;
@@ -75,6 +78,13 @@ export type Database = {
             columns: ["generation_id", "workspace_id"];
             isOneToOne: true;
             referencedRelation: "generations";
+            referencedColumns: ["id", "workspace_id"];
+          },
+          {
+            foreignKeyName: "assets_script_segment_workspace_fkey";
+            columns: ["script_segment_id", "workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "script_segments";
             referencedColumns: ["id", "workspace_id"];
           },
           {

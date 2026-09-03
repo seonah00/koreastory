@@ -41,7 +41,8 @@ pnpm check
 - TASK-009: Visual·Character·World Bible과 카테고리 이미지 프리셋 관리
 - TASK-010: Scene Prompt 조합, 실제 AI 이미지 생성, Asset Library
 - TASK-011: Halmeoni·캐릭터 Reference 등록, 승인, 이미지 편집 기반 일관성 강화
-- 다음 작업: Narration Voice/TTS와 Audio Asset workflow
+- TASK-012: Halmeoni Voice Bible 기반 Segment TTS와 Audio Asset workflow
+- 다음 작업: BGM·SFX·Ambience Audio Layer 기획과 Asset 연결
 
 자세한 기술 원칙은 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)를 참고합니다.
 
@@ -62,3 +63,5 @@ TASK-009의 Visual Bible과 이미지 프리셋 구조는 [docs/TASK-009_IMPLEME
 TASK-010의 이미지 생성과 Asset 저장 구조는 [docs/TASK-010_IMPLEMENTATION.md](docs/TASK-010_IMPLEMENTATION.md)에 정리되어 있습니다.
 
 TASK-011의 Reference 이미지와 이미지 편집 구조는 [docs/TASK-011_IMPLEMENTATION.md](docs/TASK-011_IMPLEMENTATION.md)에 정리되어 있습니다.
+
+TASK-012의 Halmeoni Narration과 Audio Asset 구조는 [docs/TASK-012_IMPLEMENTATION.md](docs/TASK-012_IMPLEMENTATION.md)에 정리되어 있습니다.
