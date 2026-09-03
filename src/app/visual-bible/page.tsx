@@ -1,9 +1,12 @@
 import {
+  approveBibleReferenceAction,
   approveBibleEntryAction,
   createBibleEntryAction,
   saveBibleVersionAction,
   saveCategoryVisualPresetAction,
+  uploadBibleReferenceAction,
 } from "./actions";
+import Image from "next/image";
 import { StudioShell } from "@/components/studio-shell";
 import { latestBibleEntries } from "@/domain/visual-bible";
 import type { Json } from "@/server/supabase/database.types";
@@ -32,7 +35,7 @@ export default async function VisualBiblePage({
     requireWorkspace(),
   ]);
   const { supabase, workspaceId, workspaceName, email } = context;
-  const [entriesResult, presetsResult] = await Promise.all([
+  const [entriesResult, presetsResult, referencesResult] = await Promise.all([
     supabase
       .from("bible_entries")
       .select("id, kind, slug, name, version, status, content, created_at")
@@ -44,6 +47,13 @@ export default async function VisualBiblePage({
       .eq("workspace_id", workspaceId)
       .eq("is_active", true)
       .order("created_at"),
+    supabase
+      .from("bible_references")
+      .select(
+        "id, bible_entry_id, label, position, assets(id, status, storage_bucket, storage_path, mime_type)",
+      )
+      .eq("workspace_id", workspaceId)
+      .order("position"),
   ]);
   const entries = entriesResult.data ?? [];
   const latest = latestBibleEntries(entries).sort((a, b) =>
@@ -56,6 +66,16 @@ export default async function VisualBiblePage({
   }
   const saved = typeof query.saved === "string" ? query.saved : null;
   const error = typeof query.error === "string" ? query.error : null;
+  const references = await Promise.all(
+    (referencesResult.data ?? []).map(async (reference) => {
+      const asset = reference.assets;
+      if (!asset) return { ...reference, signedUrl: null };
+      const { data } = await supabase.storage
+        .from(asset.storage_bucket)
+        .createSignedUrl(asset.storage_path, 3600);
+      return { ...reference, signedUrl: data?.signedUrl ?? null };
+    }),
+  );
 
   return (
     <StudioShell active="Visuals" email={email} workspaceName={workspaceName}>
@@ -149,6 +169,89 @@ export default async function VisualBiblePage({
                     이 버전 승인·잠금
                   </button>
                 </form>
+              ) : null}
+              {entry.status === "approved" && entry.kind !== "voice" ? (
+                <div className="mt-5 border-t border-[var(--line)] pt-5">
+                  <p className="text-sm font-semibold">Reference images</p>
+                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {references
+                      .filter(
+                        (reference) => reference.bible_entry_id === entry.id,
+                      )
+                      .map((reference) => (
+                        <div
+                          className="overflow-hidden rounded-xl border border-[var(--line)]"
+                          key={reference.id}
+                        >
+                          {reference.signedUrl ? (
+                            <Image
+                              alt={reference.label ?? "Bible reference"}
+                              className="aspect-square w-full object-cover"
+                              height={240}
+                              src={reference.signedUrl}
+                              width={240}
+                            />
+                          ) : null}
+                          <div className="p-2 text-xs">
+                            <p className="truncate font-medium">
+                              {reference.label}
+                            </p>
+                            <p className="text-[var(--muted)]">
+                              {reference.assets?.status}
+                            </p>
+                            {reference.assets?.status === "draft" ? (
+                              <form
+                                action={approveBibleReferenceAction}
+                                className="mt-2"
+                              >
+                                <input
+                                  name="assetId"
+                                  type="hidden"
+                                  value={reference.assets.id}
+                                />
+                                <button
+                                  className="rounded-full border border-[var(--pine)] px-3 py-1 font-semibold text-[var(--pine)]"
+                                  type="submit"
+                                >
+                                  승인·잠금
+                                </button>
+                              </form>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                  <form
+                    action={uploadBibleReferenceAction}
+                    className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]"
+                    encType="multipart/form-data"
+                  >
+                    <input name="entryId" type="hidden" value={entry.id} />
+                    <input
+                      accept="image/png,image/jpeg,image/webp"
+                      className={fieldClass}
+                      name="referenceImage"
+                      required
+                      type="file"
+                    />
+                    <input
+                      className={fieldClass}
+                      maxLength={80}
+                      name="label"
+                      placeholder="정면, 3/4, 겨울 방…"
+                      required
+                    />
+                    <button
+                      className="self-end rounded-full bg-[var(--rust)] px-4 py-2.5 text-sm font-semibold text-white"
+                      type="submit"
+                    >
+                      등록
+                    </button>
+                  </form>
+                  <p className="mt-2 text-xs text-[var(--muted)]">
+                    PNG·JPEG·WebP, 최대 7MB. 등록 후 승인해야 생성에 사용됩니다.
+                  </p>
+                </div>
               ) : null}
             </article>
           ))}

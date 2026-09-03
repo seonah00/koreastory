@@ -58,6 +58,10 @@ const sceneImageAssetsMigration = readFileSync(
   ),
   "utf8",
 );
+const bibleReferenceAssetsMigration = readFileSync(
+  "supabase/migrations/20260903072000_bible_reference_assets.sql",
+  "utf8",
+);
 const sceneImageAssetIndexesMigration = readFileSync(
   join(
     process.cwd(),
@@ -231,6 +235,21 @@ describe("scene image asset migration", () => {
     );
     expect(sceneImageAssetsMigration).toContain(
       "on delete set null (generation_id)",
+    );
+  });
+
+  it("keeps Bible reference assets inside the same workspace", () => {
+    expect(bibleReferenceAssetsMigration).toContain(
+      "bible_entries_id_workspace_unique",
+    );
+    expect(bibleReferenceAssetsMigration).toContain(
+      "assets_id_workspace_unique",
+    );
+    expect(bibleReferenceAssetsMigration).toContain(
+      "bible_references_entry_workspace_fkey",
+    );
+    expect(bibleReferenceAssetsMigration).toContain(
+      "bible_references_asset_workspace_fkey",
     );
   });
 

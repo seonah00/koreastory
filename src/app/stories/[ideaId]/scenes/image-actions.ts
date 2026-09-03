@@ -9,7 +9,7 @@ import {
   sceneImageCostUsd,
   sceneImageRequestSchema,
 } from "@/domain/scene-image";
-import { runOpenAIImage } from "@/server/ai/openai-image";
+import { runOpenAIImage, runOpenAIImageEdit } from "@/server/ai/openai-image";
 import { getServerEnv } from "@/server/env";
 import type { Json } from "@/server/supabase/database.types";
 import { requireWorkspace } from "@/server/workspace";
@@ -75,7 +75,7 @@ export async function generateSceneImageAction(formData: FormData) {
       .maybeSingle(),
     supabase
       .from("bible_entries")
-      .select("kind, slug, version, content")
+      .select("id, kind, slug, name, version, content")
       .eq("workspace_id", workspaceId)
       .eq("status", "approved")
       .order("version", { ascending: false }),
@@ -126,12 +126,68 @@ export async function generateSceneImageAction(formData: FormData) {
       visualPrompt: scene.visual_prompt,
     },
   });
+  const isFramingScene =
+    scene.position === 0 || scene.position === lastScene?.position;
+  const sceneText =
+    `${scene.title} ${scene.description} ${scene.visual_prompt}`.toLowerCase();
+  const relevantEntryIds = (entries ?? [])
+    .filter(
+      (entry) =>
+        entry.slug === "k-lore-master-style" ||
+        (isFramingScene &&
+          ["halmeoni", "halmeoni-house"].includes(entry.slug)) ||
+        (entry.kind === "character" &&
+          entry.slug !== "halmeoni" &&
+          [entry.slug, entry.name].some(
+            (term) => term.length > 2 && sceneText.includes(term.toLowerCase()),
+          )),
+    )
+    .map((entry) => entry.id);
+  const { data: referenceRows } = relevantEntryIds.length
+    ? await supabase
+        .from("bible_references")
+        .select(
+          "bible_entry_id, label, assets(id, status, storage_bucket, storage_path, mime_type)",
+        )
+        .eq("workspace_id", workspaceId)
+        .in("bible_entry_id", relevantEntryIds)
+        .order("position")
+        .limit(4)
+    : { data: [] };
+  const approvedReferences = (referenceRows ?? []).filter(
+    (row) => row.assets?.status === "approved",
+  );
+  const referenceImages = [] as {
+    bytes: Uint8Array;
+    mimeType: string;
+    name: string;
+    assetId: string;
+    bibleEntryId: string;
+  }[];
+  for (const reference of approvedReferences) {
+    if (!reference.assets) continue;
+    const { data, error } = await supabase.storage
+      .from(reference.assets.storage_bucket)
+      .download(reference.assets.storage_path);
+    if (error || !data) continue;
+    referenceImages.push({
+      bytes: new Uint8Array(await data.arrayBuffer()),
+      mimeType: reference.assets.mime_type ?? "image/png",
+      name: `${reference.label ?? "reference"}.${(reference.assets.mime_type ?? "image/png").split("/")[1]}`,
+      assetId: reference.assets.id,
+      bibleEntryId: reference.bible_entry_id,
+    });
+  }
   const request = {
     sceneId: scene.id,
     scenePlanVersionId: plan.id,
     prompt,
     bible,
     categoryRules,
+    referenceAssetIds: referenceImages.map((reference) => reference.assetId),
+    referenceBibleEntryIds: [
+      ...new Set(referenceImages.map((reference) => reference.bibleEntryId)),
+    ],
     output: { size: "1536x1024", quality: "medium", format: "webp" },
   };
   const { data: generation, error: generationError } = await supabase
@@ -141,7 +197,7 @@ export async function generateSceneImageAction(formData: FormData) {
       episode_id: idea.episode_id,
       provider: "openai",
       model: env.OPENAI_IMAGE_MODEL,
-      kind: "scene_image",
+      kind: referenceImages.length ? "scene_image_edit" : "scene_image",
       status: "pending",
       request: request as Json,
     })
@@ -163,11 +219,22 @@ export async function generateSceneImageAction(formData: FormData) {
   let storagePath: string | null = null;
   let assetCreated = false;
   try {
-    const result = await runOpenAIImage({
-      apiKey: env.OPENAI_API_KEY,
-      model: env.OPENAI_IMAGE_MODEL,
-      prompt,
-    });
+    const result = referenceImages.length
+      ? await runOpenAIImageEdit({
+          apiKey: env.OPENAI_API_KEY,
+          model: env.OPENAI_IMAGE_MODEL,
+          prompt,
+          references: referenceImages.map(({ bytes, mimeType, name }) => ({
+            bytes,
+            mimeType,
+            name,
+          })),
+        })
+      : await runOpenAIImage({
+          apiKey: env.OPENAI_API_KEY,
+          model: env.OPENAI_IMAGE_MODEL,
+          prompt,
+        });
     const checksum = createHash("sha256").update(result.bytes).digest("hex");
     storagePath = `${workspaceId}/episodes/${idea.episode_id}/scenes/${scene.id}/${generation.id}.webp`;
     const { error: uploadError } = await supabase.storage
@@ -198,6 +265,9 @@ export async function generateSceneImageAction(formData: FormData) {
           revisedPrompt: result.revisedPrompt ?? null,
           width: 1536,
           height: 1024,
+          referenceAssetIds: referenceImages.map(
+            (reference) => reference.assetId,
+          ),
         },
       })
       .select("id")

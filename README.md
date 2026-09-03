@@ -40,7 +40,8 @@ pnpm check
 - TASK-008: 승인 대본 자동 Scene 분할과 Scene Plan 버전 관리
 - TASK-009: Visual·Character·World Bible과 카테고리 이미지 프리셋 관리
 - TASK-010: Scene Prompt 조합, 실제 AI 이미지 생성, Asset Library
-- 다음 작업: Character reference 이미지 등록과 이미지 편집·일관성 강화
+- TASK-011: Halmeoni·캐릭터 Reference 등록, 승인, 이미지 편집 기반 일관성 강화
+- 다음 작업: Narration Voice/TTS와 Audio Asset workflow
 
 자세한 기술 원칙은 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)를 참고합니다.
 
@@ -59,3 +60,5 @@ TASK-008의 Scene Plan 생성과 버전 관리 구조는 [docs/TASK-008_IMPLEMEN
 TASK-009의 Visual Bible과 이미지 프리셋 구조는 [docs/TASK-009_IMPLEMENTATION.md](docs/TASK-009_IMPLEMENTATION.md)에 정리되어 있습니다.
 
 TASK-010의 이미지 생성과 Asset 저장 구조는 [docs/TASK-010_IMPLEMENTATION.md](docs/TASK-010_IMPLEMENTATION.md)에 정리되어 있습니다.
+
+TASK-011의 Reference 이미지와 이미지 편집 구조는 [docs/TASK-011_IMPLEMENTATION.md](docs/TASK-011_IMPLEMENTATION.md)에 정리되어 있습니다.

@@ -180,18 +180,18 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "bible_references_asset_id_fkey";
-            columns: ["asset_id"];
+            foreignKeyName: "bible_references_asset_workspace_fkey";
+            columns: ["asset_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "assets";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
-            foreignKeyName: "bible_references_bible_entry_id_fkey";
-            columns: ["bible_entry_id"];
+            foreignKeyName: "bible_references_entry_workspace_fkey";
+            columns: ["bible_entry_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "bible_entries";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
             foreignKeyName: "bible_references_workspace_id_fkey";
