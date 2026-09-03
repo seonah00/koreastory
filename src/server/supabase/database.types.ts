@@ -802,18 +802,18 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "scene_plan_versions_episode_id_fkey";
-            columns: ["episode_id"];
+            foreignKeyName: "scene_plan_versions_episode_workspace_fkey";
+            columns: ["episode_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "episodes";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
-            foreignKeyName: "scene_plan_versions_script_version_id_fkey";
-            columns: ["script_version_id"];
+            foreignKeyName: "scene_plan_versions_script_workspace_fkey";
+            columns: ["script_version_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "script_versions";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
             foreignKeyName: "scene_plan_versions_workspace_id_fkey";
@@ -845,18 +845,18 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "scene_segments_scene_id_fkey";
-            columns: ["scene_id"];
+            foreignKeyName: "scene_segments_scene_workspace_fkey";
+            columns: ["scene_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "scenes";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
-            foreignKeyName: "scene_segments_script_segment_id_fkey";
-            columns: ["script_segment_id"];
+            foreignKeyName: "scene_segments_script_segment_workspace_fkey";
+            columns: ["script_segment_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "script_segments";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
             foreignKeyName: "scene_segments_workspace_id_fkey";
@@ -912,11 +912,11 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "scenes_scene_plan_version_id_fkey";
-            columns: ["scene_plan_version_id"];
+            foreignKeyName: "scenes_plan_workspace_fkey";
+            columns: ["scene_plan_version_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "scene_plan_versions";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
             foreignKeyName: "scenes_workspace_id_fkey";
@@ -1285,6 +1285,17 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      create_scene_plan_version: {
+        Args: {
+          p_episode_id: string;
+          p_scenes: Json;
+          p_script_version_id: string;
+        };
+        Returns: {
+          scene_plan_id: string;
+          version: number;
+        }[];
+      };
       create_script_version: {
         Args: {
           p_episode_id: string;

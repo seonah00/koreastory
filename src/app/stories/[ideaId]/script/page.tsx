@@ -77,6 +77,9 @@ export default async function ScriptPage({
   const brief = briefResult.data;
   const versions = versionsResult.data ?? [];
   const latest = versions[0] ?? null;
+  const approvedScript = versions.find(
+    (version) => version.status === "approved",
+  );
   const { data: segments } = latest
     ? await supabase
         .from("script_segments")
@@ -147,6 +150,17 @@ export default async function ScriptPage({
         <p className="auth-error" role="alert">
           {error}
         </p>
+      ) : null}
+
+      {approvedScript ? (
+        <div className="mt-6 flex justify-end">
+          <Link
+            className="rounded-full bg-[var(--rust)] px-6 py-3 text-sm font-semibold text-white"
+            href={`/stories/${idea.id}/scenes`}
+          >
+            승인 대본으로 Scene Plan 만들기 →
+          </Link>
+        </div>
       ) : null}
 
       {latest ? (

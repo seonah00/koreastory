@@ -37,7 +37,8 @@ pnpm check
 - TASK-005: 카테고리별 소재 발굴과 Story Brief
 - TASK-006: AI 웹 리서치와 출처·근거 저장
 - TASK-007: Story Brief 기반 영어 롱폼 대본 생성·버전 관리
-- 다음 작업: 대본 자동 Scene 분할과 Scene Plan
+- TASK-008: 승인 대본 자동 Scene 분할과 Scene Plan 버전 관리
+- 다음 작업: Visual Bible·Character Bible·카테고리 이미지 프리셋
 
 자세한 기술 원칙은 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)를 참고합니다.
 
@@ -50,3 +51,5 @@ TASK-005의 소재 발굴과 Brief 흐름은 [docs/TASK-005_IMPLEMENTATION.md](d
 TASK-006의 AI 리서치와 근거 저장 구조는 [docs/TASK-006_IMPLEMENTATION.md](docs/TASK-006_IMPLEMENTATION.md)에 정리되어 있습니다.
 
 TASK-007의 영어 롱폼 대본과 버전 관리 구조는 [docs/TASK-007_IMPLEMENTATION.md](docs/TASK-007_IMPLEMENTATION.md)에 정리되어 있습니다.
+
+TASK-008의 Scene Plan 생성과 버전 관리 구조는 [docs/TASK-008_IMPLEMENTATION.md](docs/TASK-008_IMPLEMENTATION.md)에 정리되어 있습니다.

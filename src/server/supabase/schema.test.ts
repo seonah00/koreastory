@@ -30,6 +30,20 @@ const scriptWorkflowMigration = readFileSync(
   ),
   "utf8",
 );
+const scenePlanWorkflowMigration = readFileSync(
+  join(
+    process.cwd(),
+    "supabase/migrations/20260903053000_create_scene_plan_workflow.sql",
+  ),
+  "utf8",
+);
+const repeatedSceneMappingsMigration = readFileSync(
+  join(
+    process.cwd(),
+    "supabase/migrations/20260903054000_allow_repeated_scene_segment_mappings.sql",
+  ),
+  "utf8",
+);
 
 describe("Supabase foundation migration", () => {
   it("defines every planned application table", () => {
@@ -113,5 +127,36 @@ describe("script version workflow migration", () => {
     expect(scriptWorkflowMigration).toContain("security invoker");
     expect(scriptWorkflowMigration).toMatch(/from public, anon;/);
     expect(scriptWorkflowMigration).toMatch(/to authenticated;/);
+  });
+});
+
+describe("scene plan workflow migration", () => {
+  it("creates scene plans, scenes, and mappings atomically", () => {
+    expect(scenePlanWorkflowMigration).toContain(
+      "function public.create_scene_plan_version",
+    );
+    expect(repeatedSceneMappingsMigration).toContain(
+      "every script segment must be covered and unknown positions are forbidden",
+    );
+    expect(scenePlanWorkflowMigration).toContain("set stage = 'scenes'");
+  });
+
+  it("requires an approved script and workspace-safe relationships", () => {
+    expect(scenePlanWorkflowMigration).toContain("and s.status = 'approved'");
+    for (const constraint of [
+      "scene_plan_versions_episode_workspace_fkey",
+      "scene_plan_versions_script_workspace_fkey",
+      "scenes_plan_workspace_fkey",
+      "scene_segments_scene_workspace_fkey",
+      "scene_segments_script_segment_workspace_fkey",
+    ]) {
+      expect(scenePlanWorkflowMigration).toContain(constraint);
+    }
+  });
+
+  it("keeps the transaction function invoker-scoped", () => {
+    expect(scenePlanWorkflowMigration).toContain("security invoker");
+    expect(scenePlanWorkflowMigration).toMatch(/from public, anon;/);
+    expect(scenePlanWorkflowMigration).toMatch(/to authenticated;/);
   });
 });
