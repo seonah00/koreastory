@@ -1285,6 +1285,19 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      create_bible_entry_version: {
+        Args: {
+          p_content: Json;
+          p_kind: string;
+          p_name: string;
+          p_slug: string;
+          p_workspace_id: string;
+        };
+        Returns: {
+          bible_entry_id: string;
+          version: number;
+        }[];
+      };
       create_scene_plan_version: {
         Args: {
           p_episode_id: string;

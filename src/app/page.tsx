@@ -88,7 +88,7 @@ export default async function Home() {
               { label: "Dashboard", href: "/" },
               { label: "Discover", href: "/discover" },
               { label: "Stories", href: "/discover#saved-ideas" },
-              { label: "Visuals" },
+              { label: "Visuals", href: "/visual-bible" },
               { label: "Episodes" },
               { label: "Assets" },
               { label: "YouTube" },

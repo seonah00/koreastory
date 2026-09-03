@@ -38,7 +38,8 @@ pnpm check
 - TASK-006: AI 웹 리서치와 출처·근거 저장
 - TASK-007: Story Brief 기반 영어 롱폼 대본 생성·버전 관리
 - TASK-008: 승인 대본 자동 Scene 분할과 Scene Plan 버전 관리
-- 다음 작업: Visual Bible·Character Bible·카테고리 이미지 프리셋
+- TASK-009: Visual·Character·World Bible과 카테고리 이미지 프리셋 관리
+- 다음 작업: Scene Prompt 조합, 실제 AI 이미지 생성, Asset Library
 
 자세한 기술 원칙은 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)를 참고합니다.
 
@@ -53,3 +54,5 @@ TASK-006의 AI 리서치와 근거 저장 구조는 [docs/TASK-006_IMPLEMENTATIO
 TASK-007의 영어 롱폼 대본과 버전 관리 구조는 [docs/TASK-007_IMPLEMENTATION.md](docs/TASK-007_IMPLEMENTATION.md)에 정리되어 있습니다.
 
 TASK-008의 Scene Plan 생성과 버전 관리 구조는 [docs/TASK-008_IMPLEMENTATION.md](docs/TASK-008_IMPLEMENTATION.md)에 정리되어 있습니다.
+
+TASK-009의 Visual Bible과 이미지 프리셋 구조는 [docs/TASK-009_IMPLEMENTATION.md](docs/TASK-009_IMPLEMENTATION.md)에 정리되어 있습니다.

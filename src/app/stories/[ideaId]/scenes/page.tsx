@@ -99,12 +99,20 @@ export default async function ScenesPage({
 
   return (
     <StudioShell active="Stories" email={email} workspaceName={workspaceName}>
-      <Link
-        className="text-sm text-[var(--muted)] hover:text-[var(--ink)]"
-        href={`/stories/${idea.id}/script`}
-      >
-        ← Script Studio로 돌아가기
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          className="text-sm text-[var(--muted)] hover:text-[var(--ink)]"
+          href={`/stories/${idea.id}/script`}
+        >
+          ← Script Studio로 돌아가기
+        </Link>
+        <Link
+          className="text-sm font-medium text-[var(--rust)] hover:underline"
+          href="/visual-bible"
+        >
+          Visual Bible 설정 →
+        </Link>
+      </div>
       <div className="mt-6 flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
         <div>
           <p className="text-sm font-medium text-[var(--rust)]">

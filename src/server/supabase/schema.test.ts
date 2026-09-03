@@ -44,6 +44,13 @@ const repeatedSceneMappingsMigration = readFileSync(
   ),
   "utf8",
 );
+const visualBibleMigration = readFileSync(
+  join(
+    process.cwd(),
+    "supabase/migrations/20260903060000_visual_bible_and_category_presets.sql",
+  ),
+  "utf8",
+);
 
 describe("Supabase foundation migration", () => {
   it("defines every planned application table", () => {
@@ -158,5 +165,40 @@ describe("scene plan workflow migration", () => {
     expect(scenePlanWorkflowMigration).toContain("security invoker");
     expect(scenePlanWorkflowMigration).toMatch(/from public, anon;/);
     expect(scenePlanWorkflowMigration).toMatch(/to authenticated;/);
+  });
+});
+
+describe("visual bible migration", () => {
+  it("seeds the brand, Halmeoni, house, and voice defaults", () => {
+    for (const slug of [
+      "k-lore-master-style",
+      "halmeoni",
+      "halmeoni-house",
+      "halmeoni-voice",
+    ]) {
+      expect(visualBibleMigration).toContain(`'${slug}'`);
+    }
+    expect(visualBibleMigration).toContain("workspaces_visual_bible_bootstrap");
+  });
+
+  it("sets distinct visual rules for all five categories", () => {
+    for (const slug of [
+      "grandmas-tales",
+      "strange-tales",
+      "korean-legends",
+      "stories-for-sleep",
+      "old-korean-wisdom",
+    ]) {
+      expect(visualBibleMigration).toContain(`when '${slug}'`);
+    }
+  });
+
+  it("creates Bible versions with authenticated invoker permissions", () => {
+    expect(visualBibleMigration).toContain(
+      "function public.create_bible_entry_version",
+    );
+    expect(visualBibleMigration).toContain("security invoker");
+    expect(visualBibleMigration).toMatch(/from public, anon;/);
+    expect(visualBibleMigration).toMatch(/to authenticated;/);
   });
 });
