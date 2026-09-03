@@ -960,11 +960,11 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "script_segments_script_version_id_fkey";
-            columns: ["script_version_id"];
+            foreignKeyName: "script_segments_version_workspace_fkey";
+            columns: ["script_version_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "script_versions";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
             foreignKeyName: "script_segments_workspace_id_fkey";
@@ -1020,18 +1020,18 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "script_versions_episode_id_fkey";
-            columns: ["episode_id"];
+            foreignKeyName: "script_versions_episode_workspace_fkey";
+            columns: ["episode_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "episodes";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
-            foreignKeyName: "script_versions_story_brief_version_id_fkey";
-            columns: ["story_brief_version_id"];
+            foreignKeyName: "script_versions_brief_workspace_fkey";
+            columns: ["story_brief_version_id", "workspace_id"];
             isOneToOne: false;
             referencedRelation: "story_brief_versions";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "workspace_id"];
           },
           {
             foreignKeyName: "script_versions_workspace_id_fkey";
@@ -1285,6 +1285,19 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      create_script_version: {
+        Args: {
+          p_episode_id: string;
+          p_full_text: string;
+          p_segments: Json;
+          p_story_brief_version_id: string;
+          p_title: string;
+        };
+        Returns: {
+          script_id: string;
+          version: number;
+        }[];
+      };
       create_story_brief_from_idea: {
         Args: {
           p_content: Json;

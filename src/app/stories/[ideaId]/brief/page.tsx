@@ -334,6 +334,17 @@ export default async function StoryBriefPage({
         {idea.rationale}
       </aside>
 
+      {existingBrief ? (
+        <div className="mt-8 flex justify-end">
+          <Link
+            className="rounded-full bg-[var(--rust)] px-6 py-3 text-sm font-semibold text-white"
+            href={`/stories/${idea.id}/script`}
+          >
+            영어 롱폼 대본 만들기 →
+          </Link>
+        </div>
+      ) : null}
+
       <section className="mt-12" id="research">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>

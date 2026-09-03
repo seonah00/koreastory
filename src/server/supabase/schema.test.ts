@@ -23,6 +23,13 @@ const researchIntegrityMigration = readFileSync(
   ),
   "utf8",
 );
+const scriptWorkflowMigration = readFileSync(
+  join(
+    process.cwd(),
+    "supabase/migrations/20260903050000_create_script_version_workflow.sql",
+  ),
+  "utf8",
+);
 
 describe("Supabase foundation migration", () => {
   it("defines every planned application table", () => {
@@ -76,5 +83,35 @@ describe("research evidence migration", () => {
         /foreign key \(story_idea_id, workspace_id\)/g,
       ),
     ).toHaveLength(2);
+  });
+});
+
+describe("script version workflow migration", () => {
+  it("creates script and segment versions atomically", () => {
+    expect(scriptWorkflowMigration).toContain(
+      "function public.create_script_version",
+    );
+    expect(scriptWorkflowMigration).toContain(
+      "jsonb_array_elements(p_segments) with ordinality",
+    );
+    expect(scriptWorkflowMigration).toContain("set stage = 'script'");
+  });
+
+  it("prevents cross-workspace script relationships", () => {
+    expect(scriptWorkflowMigration).toContain(
+      "script_versions_episode_workspace_fkey",
+    );
+    expect(scriptWorkflowMigration).toContain(
+      "script_versions_brief_workspace_fkey",
+    );
+    expect(scriptWorkflowMigration).toContain(
+      "script_segments_version_workspace_fkey",
+    );
+  });
+
+  it("exposes the invoker function only to authenticated users", () => {
+    expect(scriptWorkflowMigration).toContain("security invoker");
+    expect(scriptWorkflowMigration).toMatch(/from public, anon;/);
+    expect(scriptWorkflowMigration).toMatch(/to authenticated;/);
   });
 });
