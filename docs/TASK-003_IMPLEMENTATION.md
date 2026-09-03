@@ -9,6 +9,7 @@
 - Immutable approved briefs, scripts, scene plans, bible entries, assets, and renders
 - Five category presets created with every workspace
 - pgTAP metadata tests for tables, RLS, policies, and Storage
+- Covering indexes for every application foreign key
 
 ## Storage path
 
@@ -25,4 +26,4 @@ supabase test db
 supabase db lint
 ```
 
-No remote project is linked or migrated by this task.
+Remote project: `koreastory` (`vmypcrwegfovcszokhlz`, Seoul).
