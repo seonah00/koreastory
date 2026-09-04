@@ -824,6 +824,113 @@ export type Database = {
           },
         ];
       };
+      youtube_metric_snapshots: {
+        Row: {
+          average_percentage_viewed: number;
+          average_view_duration_seconds: number;
+          captured_at: string;
+          click_through_rate: number;
+          comments: number;
+          created_at: string;
+          id: string;
+          impressions: number;
+          likes: number;
+          publication_id: string;
+          subscribers_gained: number;
+          views: number;
+          workspace_id: string;
+        };
+        Insert: {
+          average_percentage_viewed: number;
+          average_view_duration_seconds: number;
+          captured_at: string;
+          click_through_rate: number;
+          comments?: number;
+          created_at?: string;
+          id?: string;
+          impressions: number;
+          likes?: number;
+          publication_id: string;
+          subscribers_gained?: number;
+          views: number;
+          workspace_id: string;
+        };
+        Update: {
+          average_percentage_viewed?: number;
+          average_view_duration_seconds?: number;
+          captured_at?: string;
+          click_through_rate?: number;
+          comments?: number;
+          created_at?: string;
+          id?: string;
+          impressions?: number;
+          likes?: number;
+          publication_id?: string;
+          subscribers_gained?: number;
+          views?: number;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "youtube_metrics_publication_workspace_fkey";
+            columns: ["publication_id", "workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "youtube_publications";
+            referencedColumns: ["id", "workspace_id"];
+          },
+        ];
+      };
+      youtube_publications: {
+        Row: {
+          created_at: string;
+          episode_id: string;
+          id: string;
+          publish_package_version_id: string;
+          published_at: string;
+          updated_at: string;
+          video_id: string;
+          video_url: string;
+          workspace_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          episode_id: string;
+          id?: string;
+          publish_package_version_id: string;
+          published_at: string;
+          updated_at?: string;
+          video_id: string;
+          video_url: string;
+          workspace_id: string;
+        };
+        Update: {
+          created_at?: string;
+          episode_id?: string;
+          id?: string;
+          publish_package_version_id?: string;
+          published_at?: string;
+          updated_at?: string;
+          video_id?: string;
+          video_url?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "youtube_publications_episode_workspace_fkey";
+            columns: ["episode_id", "workspace_id"];
+            isOneToOne: true;
+            referencedRelation: "episodes";
+            referencedColumns: ["id", "workspace_id"];
+          },
+          {
+            foreignKeyName: "youtube_publications_package_workspace_fkey";
+            columns: ["publish_package_version_id", "workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "publish_package_versions";
+            referencedColumns: ["id", "workspace_id"];
+          },
+        ];
+      };
       prompt_versions: {
         Row: {
           created_at: string;
@@ -1580,6 +1687,30 @@ export type Database = {
           publish_package_version_id: string;
           version: number;
         }[];
+      };
+      record_youtube_metric_snapshot: {
+        Args: {
+          p_average_percentage_viewed: number;
+          p_average_view_duration_seconds: number;
+          p_captured_at: string;
+          p_click_through_rate: number;
+          p_comments: number;
+          p_impressions: number;
+          p_likes: number;
+          p_publication_id: string;
+          p_subscribers_gained: number;
+          p_views: number;
+        };
+        Returns: string;
+      };
+      record_youtube_publication: {
+        Args: {
+          p_publish_package_version_id: string;
+          p_published_at: string;
+          p_video_id: string;
+          p_video_url: string;
+        };
+        Returns: string;
       };
       create_bible_entry_version: {
         Args: {

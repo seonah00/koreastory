@@ -15,6 +15,10 @@ import {
   publishPackageContentSchema,
 } from "@/domain/publish-package";
 import { requireWorkspace } from "@/server/workspace";
+import { recordYouTubePublicationAction } from "@/app/youtube/actions";
+
+const kstInputValue = () =>
+  new Date(Date.now() + 9 * 60 * 60 * 1_000).toISOString().slice(0, 16);
 
 export default async function PublishStudioPage({
   params,
@@ -37,26 +41,35 @@ export default async function PublishStudioPage({
     .maybeSingle();
   if (!idea) notFound();
 
-  const [{ data: episode }, { data: packages }] = await Promise.all([
-    idea.episode_id
-      ? supabase
-          .from("episodes")
-          .select("stage")
-          .eq("workspace_id", workspaceId)
-          .eq("id", idea.episode_id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    idea.episode_id
-      ? supabase
-          .from("publish_package_versions")
-          .select(
-            "id, version, status, content, thumbnail_asset_id, created_at",
-          )
-          .eq("workspace_id", workspaceId)
-          .eq("episode_id", idea.episode_id)
-          .order("version", { ascending: false })
-      : Promise.resolve({ data: [] }),
-  ]);
+  const [{ data: episode }, { data: packages }, { data: publication }] =
+    await Promise.all([
+      idea.episode_id
+        ? supabase
+            .from("episodes")
+            .select("stage")
+            .eq("workspace_id", workspaceId)
+            .eq("id", idea.episode_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      idea.episode_id
+        ? supabase
+            .from("publish_package_versions")
+            .select(
+              "id, version, status, content, thumbnail_asset_id, created_at",
+            )
+            .eq("workspace_id", workspaceId)
+            .eq("episode_id", idea.episode_id)
+            .order("version", { ascending: false })
+        : Promise.resolve({ data: [] }),
+      idea.episode_id
+        ? supabase
+            .from("youtube_publications")
+            .select("id, video_url, published_at")
+            .eq("workspace_id", workspaceId)
+            .eq("episode_id", idea.episode_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
   const latest = packages?.[0] ?? null;
   const content = publishPackageContentSchema.safeParse(latest?.content);
   const { data: thumbnail } = latest?.thumbnail_asset_id
@@ -346,6 +359,82 @@ export default async function PublishStudioPage({
               ) : null}
             </div>
           </section>
+
+          {latest.status === "approved" ? (
+            <section className="mt-8 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold">YouTube 게시 기록</h2>
+                  <p className="mt-1 text-sm text-[var(--muted)]">
+                    실제 업로드가 끝난 뒤 URL과 공개 시각을 기록합니다.
+                  </p>
+                </div>
+                <Link
+                  className="text-sm text-[var(--pine)] underline"
+                  href="/youtube"
+                >
+                  전체 성과 보기 →
+                </Link>
+              </div>
+              {publication ? (
+                <div className="mt-5 rounded-xl bg-white p-4 text-sm">
+                  <a
+                    className="font-medium text-[var(--pine)] underline"
+                    href={publication.video_url}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    게시 영상 열기 ↗
+                  </a>
+                  <p className="mt-2 text-[var(--muted)]">
+                    {new Date(publication.published_at).toLocaleString(
+                      "ko-KR",
+                      { timeZone: "Asia/Seoul" },
+                    )}{" "}
+                    게시
+                  </p>
+                </div>
+              ) : (
+                <form
+                  action={recordYouTubePublicationAction}
+                  className="mt-5 grid gap-3 sm:grid-cols-[1fr_230px_auto] sm:items-end"
+                >
+                  <input name="ideaId" type="hidden" value={idea.id} />
+                  <input
+                    name="publishPackageVersionId"
+                    type="hidden"
+                    value={latest.id}
+                  />
+                  <label className="text-xs text-[var(--muted)]">
+                    YouTube URL
+                    <input
+                      className="auth-input mt-1"
+                      name="videoUrl"
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      required
+                      type="url"
+                    />
+                  </label>
+                  <label className="text-xs text-[var(--muted)]">
+                    게시 시각(KST)
+                    <input
+                      className="auth-input mt-1"
+                      defaultValue={kstInputValue()}
+                      name="publishedAt"
+                      required
+                      type="datetime-local"
+                    />
+                  </label>
+                  <button
+                    className="rounded-full bg-[var(--pine)] px-5 py-3 text-sm font-semibold text-white"
+                    type="submit"
+                  >
+                    게시 기록
+                  </button>
+                </form>
+              )}
+            </section>
+          ) : null}
         </>
       ) : latest ? (
         <p className="mt-8 rounded-xl bg-[#fff0ed] p-4 text-sm text-[#8a3027]">

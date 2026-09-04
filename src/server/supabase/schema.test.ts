@@ -90,6 +90,14 @@ const publishPackageMigration = readFileSync(
   "supabase/migrations/20260904030000_publish_package_workflow.sql",
   "utf8",
 );
+const youtubeAnalyticsMigration = readFileSync(
+  "supabase/migrations/20260904040000_youtube_publication_analytics.sql",
+  "utf8",
+);
+const youtubeAnalyticsIndexesMigration = readFileSync(
+  "supabase/migrations/20260904041500_index_youtube_publication_episode.sql",
+  "utf8",
+);
 const sceneImageAssetIndexesMigration = readFileSync(
   join(
     process.cwd(),
@@ -418,6 +426,43 @@ describe("scene image asset migration", () => {
     expect(publishPackageMigration).toContain("security invoker");
     expect(publishPackageMigration).toContain("from public, anon");
     expect(publishPackageMigration).toContain("to authenticated");
+  });
+
+  it("stores workspace-scoped YouTube publications and metric snapshots", () => {
+    for (const table of ["youtube_publications", "youtube_metric_snapshots"]) {
+      expect(youtubeAnalyticsMigration).toContain(
+        `create table public.${table}`,
+      );
+      expect(youtubeAnalyticsMigration).toContain(
+        `alter table public.${table} enable row level security`,
+      );
+    }
+    expect(youtubeAnalyticsMigration).toContain(
+      "youtube_publications_package_workspace_fkey",
+    );
+    expect(youtubeAnalyticsMigration).toContain(
+      "youtube_metrics_publication_workspace_fkey",
+    );
+    expect(youtubeAnalyticsMigration).toContain(
+      "private.protect_youtube_publication",
+    );
+    expect(youtubeAnalyticsMigration).toContain(
+      "metrics cannot predate publication",
+    );
+    for (const functionName of [
+      "record_youtube_publication",
+      "record_youtube_metric_snapshot",
+    ]) {
+      expect(youtubeAnalyticsMigration).toContain(
+        `function public.${functionName}`,
+      );
+    }
+    expect(youtubeAnalyticsMigration).toContain("security invoker");
+    expect(youtubeAnalyticsMigration).toContain("from public, anon");
+    expect(youtubeAnalyticsMigration).toContain("to authenticated");
+    expect(youtubeAnalyticsIndexesMigration).toContain(
+      "youtube_publications_episode_workspace_fkey_idx",
+    );
   });
 
   it("allows only one persisted asset for a generation", () => {

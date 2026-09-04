@@ -10,7 +10,7 @@ const navigation = [
   { label: "Visuals", href: "/visual-bible" },
   { label: "Episodes" },
   { label: "Assets", href: "/assets" },
-  { label: "YouTube" },
+  { label: "YouTube", href: "/youtube" },
 ] as const;
 
 export function StudioShell({
@@ -71,7 +71,7 @@ export function StudioShell({
                 </Link>
               ) : (
                 <span
-                  className={`block rounded-xl px-4 py-3 text-sm ${item.label === active ? "bg-[var(--pine)] font-medium text-white" : "text-[var(--muted)]/55"}`}
+                  className="block rounded-xl px-4 py-3 text-sm text-[var(--muted)]/55"
                   key={item.label}
                 >
                   {item.label}

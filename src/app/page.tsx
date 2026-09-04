@@ -91,7 +91,7 @@ export default async function Home() {
               { label: "Visuals", href: "/visual-bible" },
               { label: "Episodes" },
               { label: "Assets", href: "/assets" },
-              { label: "YouTube" },
+              { label: "YouTube", href: "/youtube" },
             ].map((item, index) =>
               typeof item.href === "string" ? (
                 <Link
