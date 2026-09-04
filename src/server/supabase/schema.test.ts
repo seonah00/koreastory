@@ -82,6 +82,10 @@ const asyncRenderWorkerMigration = readFileSync(
   "supabase/migrations/20260904010000_async_render_worker.sql",
   "utf8",
 );
+const subtitleExportsMigration = readFileSync(
+  "supabase/migrations/20260904020000_subtitle_exports_and_review.sql",
+  "utf8",
+);
 const sceneImageAssetIndexesMigration = readFileSync(
   join(
     process.cwd(),
@@ -362,6 +366,28 @@ describe("scene image asset migration", () => {
     expect(asyncRenderWorkerMigration).toContain(
       "private.protect_render_version",
     );
+  });
+
+  it("registers versioned subtitle exports before review completion", () => {
+    expect(subtitleExportsMigration).toContain(
+      "assets_render_version_workspace_fkey",
+    );
+    expect(subtitleExportsMigration).toContain(
+      "assets_render_subtitle_format_unique",
+    );
+    for (const functionName of [
+      "create_subtitle_exports",
+      "mark_episode_ready",
+    ]) {
+      expect(subtitleExportsMigration).toContain(
+        `function public.${functionName}`,
+      );
+    }
+    expect(subtitleExportsMigration).toContain("'text/vtt'");
+    expect(subtitleExportsMigration).toContain("'application/x-subrip'");
+    expect(subtitleExportsMigration).toContain("security invoker");
+    expect(subtitleExportsMigration).toContain("from public, anon");
+    expect(subtitleExportsMigration).toContain("to authenticated");
   });
 
   it("allows only one persisted asset for a generation", () => {

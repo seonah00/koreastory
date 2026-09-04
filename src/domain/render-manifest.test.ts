@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  captionStyleForCategory,
+  captionsToSrt,
+  captionsToWebVtt,
+  createCaptionCues,
   dbToLinearVolume,
   millisecondsToFrames,
   renderManifestSchema,
@@ -51,5 +55,27 @@ describe("render manifest", () => {
     expect(millisecondsToFrames(0)).toBe(1);
     expect(millisecondsToFrames(1_000)).toBe(30);
     expect(dbToLinearVolume(-6)).toBeCloseTo(0.501, 3);
+  });
+
+  it("splits narration into timed caption cues and exports VTT/SRT", () => {
+    const cues = createCaptionCues({
+      durationInFrames: 180,
+      fps: 30,
+      segmentId: "11111111-1111-4111-8111-111111111111",
+      startFrame: 30,
+      text: "Come closer. I have an old Korean story to tell you tonight.",
+    });
+    expect(cues).toHaveLength(2);
+    expect(cues[0].startFrame).toBe(30);
+    expect(cues.at(-1)?.endFrame).toBe(210);
+    expect(captionsToWebVtt(cues, 30)).toContain("00:00:01.000 -->");
+    expect(captionsToSrt(cues, 30)).toContain("00:00:01,000 -->");
+  });
+
+  it("uses a quieter subtitle treatment for sleep stories", () => {
+    const sleep = captionStyleForCategory("stories-for-sleep");
+    const strange = captionStyleForCategory("strange-tales");
+    expect(sleep.fontSize).toBeLessThan(strange.fontSize);
+    expect(sleep.backgroundColor).not.toBe(strange.backgroundColor);
   });
 });

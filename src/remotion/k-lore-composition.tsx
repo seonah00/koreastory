@@ -60,6 +60,45 @@ function SceneVisual({
   );
 }
 
+function CaptionOverlay({ manifest }: { manifest: ResolvedRenderManifest }) {
+  const frame = useCurrentFrame();
+  const captions = manifest.captions;
+  if (!captions) return null;
+  const cue = captions.cues.find(
+    (candidate) => frame >= candidate.startFrame && frame < candidate.endFrame,
+  );
+  if (!cue) return null;
+
+  return (
+    <AbsoluteFill
+      style={{
+        alignItems: "center",
+        justifyContent: "flex-end",
+        paddingBottom: `${captions.style.bottomPercent}%`,
+        pointerEvents: "none",
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: captions.style.backgroundColor,
+          borderRadius: 14,
+          color: captions.style.textColor,
+          fontFamily: "Georgia, serif",
+          fontSize: captions.style.fontSize,
+          fontWeight: 600,
+          lineHeight: 1.35,
+          maxWidth: `${captions.style.maxWidthPercent}%`,
+          padding: "12px 24px 14px",
+          textAlign: "center",
+          textShadow: "0 2px 8px rgba(0,0,0,.65)",
+        }}
+      >
+        {cue.text}
+      </div>
+    </AbsoluteFill>
+  );
+}
+
 export function KLoreComposition({
   manifest,
 }: {
@@ -104,6 +143,7 @@ export function KLoreComposition({
           </Sequence>
         );
       })}
+      <CaptionOverlay manifest={manifest} />
     </AbsoluteFill>
   );
 }

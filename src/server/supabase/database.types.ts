@@ -119,6 +119,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["asset_kind"];
           metadata: Json;
           mime_type: string | null;
+          render_version_id: string | null;
           scene_id: string | null;
           script_segment_id: string | null;
           status: Database["public"]["Enums"]["approval_status"];
@@ -138,6 +139,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["asset_kind"];
           metadata?: Json;
           mime_type?: string | null;
+          render_version_id?: string | null;
           scene_id?: string | null;
           script_segment_id?: string | null;
           status?: Database["public"]["Enums"]["approval_status"];
@@ -157,6 +159,7 @@ export type Database = {
           kind?: Database["public"]["Enums"]["asset_kind"];
           metadata?: Json;
           mime_type?: string | null;
+          render_version_id?: string | null;
           scene_id?: string | null;
           script_segment_id?: string | null;
           status?: Database["public"]["Enums"]["approval_status"];
@@ -170,6 +173,13 @@ export type Database = {
             columns: ["generation_id", "workspace_id"];
             isOneToOne: true;
             referencedRelation: "generations";
+            referencedColumns: ["id", "workspace_id"];
+          },
+          {
+            foreignKeyName: "assets_render_version_workspace_fkey";
+            columns: ["render_version_id", "workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "render_versions";
             referencedColumns: ["id", "workspace_id"];
           },
           {
@@ -1452,6 +1462,21 @@ export type Database = {
         };
         Returns: string;
       };
+      create_subtitle_exports: {
+        Args: {
+          p_render_version_id: string;
+          p_srt_bytes: number;
+          p_srt_checksum_sha256: string;
+          p_srt_path: string;
+          p_vtt_bytes: number;
+          p_vtt_checksum_sha256: string;
+          p_vtt_path: string;
+        };
+        Returns: {
+          srt_asset_id: string;
+          vtt_asset_id: string;
+        }[];
+      };
       create_render_version: {
         Args: {
           p_episode_id: string;
@@ -1529,6 +1554,10 @@ export type Database = {
           p_progress: number;
           p_worker_id: string;
         };
+        Returns: boolean;
+      };
+      mark_episode_ready: {
+        Args: { p_render_version_id: string };
         Returns: boolean;
       };
     };

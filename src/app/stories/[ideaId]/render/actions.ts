@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
+  captionStyleForCategory,
+  createCaptionCues,
   millisecondsToFrames,
   renderManifestSchema,
   renderVersionApprovalSchema,
@@ -50,7 +52,7 @@ export async function createRenderVersionAction(formData: FormData) {
   const { supabase, workspaceId } = await requireWorkspace();
   const { data: idea } = await supabase
     .from("story_ideas")
-    .select("episode_id")
+    .select("episode_id, category_presets(slug)")
     .eq("workspace_id", workspaceId)
     .eq("id", parsed.data.ideaId)
     .maybeSingle();
@@ -86,7 +88,7 @@ export async function createRenderVersionAction(formData: FormData) {
       supabase
         .from("scene_segments")
         .select(
-          "scene_id, position, script_segments(id, position, estimated_duration_ms)",
+          "scene_id, position, script_segments(id, position, narration, estimated_duration_ms)",
         )
         .eq("workspace_id", workspaceId)
         .in("scene_id", sceneIds)
@@ -163,6 +165,7 @@ export async function createRenderVersionAction(formData: FormData) {
 
   let timelineFrame = 0;
   const narrated = new Set<string>();
+  const captionCues: ReturnType<typeof createCaptionCues> = [];
   const manifestScenes = scenes.map((scene) => {
     const sceneMappings = (mappings ?? []).filter(
       (mapping) => mapping.scene_id === scene.id,
@@ -177,6 +180,15 @@ export async function createRenderVersionAction(formData: FormData) {
       const durationInFrames = millisecondsToFrames(
         segment.estimated_duration_ms ?? 8_000,
         fps,
+      );
+      captionCues.push(
+        ...createCaptionCues({
+          durationInFrames,
+          fps,
+          segmentId: segment.id,
+          startFrame: timelineFrame + narrationFrame,
+          text: segment.narration,
+        }),
       );
       const clip = {
         segmentId: segment.id,
@@ -242,6 +254,13 @@ export async function createRenderVersionAction(formData: FormData) {
     },
     scenes: manifestScenes,
     audioLayers,
+    captions: {
+      language: "en",
+      style: captionStyleForCategory(
+        idea.category_presets?.slug ?? "grandmas-tales",
+      ),
+      cues: captionCues,
+    },
   });
   const { data, error } = await supabase.rpc("create_render_version", {
     p_episode_id: idea.episode_id,

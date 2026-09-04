@@ -6,6 +6,10 @@ import {
   createRenderVersionAction,
   enqueueRenderJobAction,
 } from "./actions";
+import {
+  createSubtitleExportsAction,
+  markEpisodeReadyAction,
+} from "./export-actions";
 import { RenderPreview } from "@/components/render-preview";
 import { RenderJobStatus } from "@/components/render-job-status";
 import { StudioShell } from "@/components/studio-shell";
@@ -91,6 +95,25 @@ export default async function RenderStudioPage({
         .order("version", { ascending: false })
     : { data: [] };
   const latest = versions?.[0] ?? null;
+  const [{ data: episode }, { data: subtitleAssets }] = await Promise.all([
+    idea.episode_id
+      ? supabase
+          .from("episodes")
+          .select("stage")
+          .eq("workspace_id", workspaceId)
+          .eq("id", idea.episode_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    latest
+      ? supabase
+          .from("assets")
+          .select("id, storage_bucket, storage_path, metadata")
+          .eq("workspace_id", workspaceId)
+          .eq("render_version_id", latest.id)
+          .eq("kind", "subtitle")
+          .eq("status", "approved")
+      : Promise.resolve({ data: [] }),
+  ]);
   const { data: jobs } = latest
     ? await supabase
         .from("jobs")
@@ -109,6 +132,23 @@ export default async function RenderStudioPage({
         .from(latest.assets.storage_bucket)
         .createSignedUrl(latest.assets.storage_path, 3600)
     : { data: null };
+  const subtitleUrls = new Map<string, string>();
+  await Promise.all(
+    (subtitleAssets ?? []).map(async (asset) => {
+      const format =
+        asset.metadata &&
+        typeof asset.metadata === "object" &&
+        !Array.isArray(asset.metadata) &&
+        typeof asset.metadata.format === "string"
+          ? asset.metadata.format
+          : null;
+      if (!format) return;
+      const { data } = await supabase.storage
+        .from(asset.storage_bucket)
+        .createSignedUrl(asset.storage_path, 3600);
+      if (data?.signedUrl) subtitleUrls.set(format, data.signedUrl);
+    }),
+  );
   const parsed = latest
     ? renderManifestSchema.safeParse(latest.manifest)
     : null;
@@ -287,9 +327,113 @@ export default async function RenderStudioPage({
             </section>
           ) : null}
 
+          {latest.output_asset_id ? (
+            <section className="mt-8 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold tracking-wide text-[var(--rust)] uppercase">
+                    Final Review &amp; Export
+                  </p>
+                  <h2 className="mt-1 text-xl font-semibold">
+                    게시 패키지 확인
+                  </h2>
+                  <p className="mt-1 text-sm text-[var(--muted)]">
+                    MP4·자막·Manifest를 내려받고 검수가 끝나면 Ready로 넘깁니다.
+                  </p>
+                </div>
+                <span className="rounded-full bg-[#f3eee4] px-3 py-1.5 text-xs font-semibold capitalize">
+                  {episode?.stage ?? "review"}
+                </span>
+              </div>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-4">
+                {[
+                  ["MP4", outputUrl?.signedUrl ? "Ready" : "Missing"],
+                  [
+                    "Captions",
+                    `${parsed.data.captions?.cues.length ?? 0} cues`,
+                  ],
+                  ["VTT", subtitleUrls.has("vtt") ? "Ready" : "Missing"],
+                  ["SRT", subtitleUrls.has("srt") ? "Ready" : "Missing"],
+                ].map(([label, value]) => (
+                  <div className="rounded-xl bg-white p-4" key={label}>
+                    <p className="text-xs text-[var(--muted)] uppercase">
+                      {label}
+                    </p>
+                    <p className="mt-1 font-semibold">{value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {!parsed.data.captions?.cues.length ? (
+                <p className="mt-4 rounded-xl bg-[#fff7df] p-4 text-sm text-[#735718]">
+                  이 Manifest에는 자막이 없습니다. 새 Manifest 버전을 생성하고
+                  승인한 뒤 다시 렌더해 주세요.
+                </p>
+              ) : null}
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                {outputUrl?.signedUrl ? (
+                  <a
+                    className="rounded-full border border-[var(--pine)] px-4 py-2 text-sm font-semibold text-[var(--pine)]"
+                    download
+                    href={outputUrl.signedUrl}
+                  >
+                    MP4
+                  </a>
+                ) : null}
+                {(["vtt", "srt"] as const).map((format) =>
+                  subtitleUrls.get(format) ? (
+                    <a
+                      className="rounded-full border border-[var(--pine)] px-4 py-2 text-sm font-semibold text-[var(--pine)] uppercase"
+                      download
+                      href={subtitleUrls.get(format)}
+                      key={format}
+                    >
+                      {format}
+                    </a>
+                  ) : null,
+                )}
+                <a
+                  className="rounded-full border border-[var(--pine)] px-4 py-2 text-sm font-semibold text-[var(--pine)]"
+                  download
+                  href={`/stories/${idea.id}/render/manifest`}
+                >
+                  Manifest JSON
+                </a>
+                {parsed.data.captions?.cues.length && subtitleUrls.size < 2 ? (
+                  <form action={createSubtitleExportsAction}>
+                    <input name="ideaId" type="hidden" value={idea.id} />
+                    <button
+                      className="rounded-full bg-[var(--pine)] px-4 py-2 text-sm font-semibold text-white"
+                      name="renderVersionId"
+                      value={latest.id}
+                    >
+                      VTT·SRT 생성
+                    </button>
+                  </form>
+                ) : null}
+                {outputUrl?.signedUrl &&
+                subtitleUrls.size >= 2 &&
+                episode?.stage !== "ready" ? (
+                  <form action={markEpisodeReadyAction}>
+                    <input name="ideaId" type="hidden" value={idea.id} />
+                    <button
+                      className="rounded-full bg-[var(--rust)] px-4 py-2 text-sm font-semibold text-white"
+                      name="renderVersionId"
+                      value={latest.id}
+                    >
+                      검수 완료 · Ready
+                    </button>
+                  </form>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
+
           <section className="mt-8 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5">
             <h2 className="text-xl font-semibold">Manifest 입력 고정</h2>
-            <ul className="mt-4 grid gap-3 text-sm text-[var(--muted)] sm:grid-cols-3">
+            <ul className="mt-4 grid gap-3 text-sm text-[var(--muted)] sm:grid-cols-4">
               <li className="rounded-xl bg-white p-4">
                 Scene 이미지 {parsed.data.scenes.length}개
               </li>
@@ -303,6 +447,9 @@ export default async function RenderStudioPage({
               </li>
               <li className="rounded-xl bg-white p-4">
                 Audio Layer {parsed.data.audioLayers.length}개
+              </li>
+              <li className="rounded-xl bg-white p-4">
+                Caption {parsed.data.captions?.cues.length ?? 0}개
               </li>
             </ul>
           </section>
