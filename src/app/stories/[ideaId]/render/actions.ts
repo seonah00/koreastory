@@ -292,3 +292,34 @@ export async function approveRenderVersionAction(formData: FormData) {
     location(parsed.data.ideaId, "saved", "Manifest를 승인하고 잠갔습니다."),
   );
 }
+
+export async function enqueueRenderJobAction(formData: FormData) {
+  const parsed = renderVersionApprovalSchema.safeParse({
+    ideaId: formData.get("ideaId"),
+    renderVersionId: formData.get("renderVersionId"),
+  });
+  if (!parsed.success)
+    redirect("/discover?error=올바르지+않은+Manifest입니다.");
+  const { supabase } = await requireWorkspace();
+  const { data, error } = await supabase.rpc("enqueue_render_job", {
+    p_render_version_id: parsed.data.renderVersionId,
+  });
+  if (error || !data?.[0])
+    redirect(
+      location(
+        parsed.data.ideaId,
+        "error",
+        "승인된 Manifest만 MP4 렌더 대기열에 추가할 수 있습니다.",
+      ),
+    );
+  revalidatePath(`/stories/${parsed.data.ideaId}/render`);
+  redirect(
+    location(
+      parsed.data.ideaId,
+      "saved",
+      data[0].status === "succeeded"
+        ? "이미 완료된 Render Job입니다."
+        : "MP4 Render Job을 대기열에 추가했습니다.",
+    ),
+  );
+}

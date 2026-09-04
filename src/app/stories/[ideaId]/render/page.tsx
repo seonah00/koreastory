@@ -4,8 +4,10 @@ import { notFound } from "next/navigation";
 import {
   approveRenderVersionAction,
   createRenderVersionAction,
+  enqueueRenderJobAction,
 } from "./actions";
 import { RenderPreview } from "@/components/render-preview";
+import { RenderJobStatus } from "@/components/render-job-status";
 import { StudioShell } from "@/components/studio-shell";
 import {
   renderManifestSchema,
@@ -81,12 +83,32 @@ export default async function RenderStudioPage({
   const { data: versions } = idea.episode_id
     ? await supabase
         .from("render_versions")
-        .select("id, version, status, manifest, created_at")
+        .select(
+          "id, version, status, manifest, created_at, output_asset_id, assets!render_versions_output_asset_workspace_fkey(storage_bucket, storage_path, bytes)",
+        )
         .eq("workspace_id", workspaceId)
         .eq("episode_id", idea.episode_id)
         .order("version", { ascending: false })
     : { data: [] };
   const latest = versions?.[0] ?? null;
+  const { data: jobs } = latest
+    ? await supabase
+        .from("jobs")
+        .select(
+          "id, status, progress, attempt, max_attempts, error, updated_at",
+        )
+        .eq("workspace_id", workspaceId)
+        .eq("render_version_id", latest.id)
+        .eq("kind", "render_mp4")
+        .order("created_at", { ascending: false })
+        .limit(1)
+    : { data: [] };
+  const renderJob = jobs?.[0] ?? null;
+  const { data: outputUrl } = latest?.assets
+    ? await supabase.storage
+        .from(latest.assets.storage_bucket)
+        .createSignedUrl(latest.assets.storage_path, 3600)
+    : { data: null };
   const parsed = latest
     ? renderManifestSchema.safeParse(latest.manifest)
     : null;
@@ -191,9 +213,31 @@ export default async function RenderStudioPage({
                   </button>
                 </form>
               ) : (
-                <span className="rounded-full bg-[#e8f1e5] px-3 py-1.5 text-xs font-semibold text-[#31572d]">
-                  Approved
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="rounded-full bg-[#e8f1e5] px-3 py-1.5 text-xs font-semibold text-[#31572d]">
+                    Approved
+                  </span>
+                  {!latest.output_asset_id ? (
+                    <form action={enqueueRenderJobAction}>
+                      <input name="ideaId" type="hidden" value={idea.id} />
+                      <button
+                        className="rounded-full bg-[var(--pine)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-45"
+                        disabled={
+                          renderJob?.status === "pending" ||
+                          renderJob?.status === "running"
+                        }
+                        name="renderVersionId"
+                        value={latest.id}
+                      >
+                        {renderJob?.status === "running"
+                          ? `렌더링 ${Math.round(Number(renderJob.progress))}%`
+                          : renderJob?.status === "pending"
+                            ? "렌더 대기 중"
+                            : "MP4 렌더 시작"}
+                      </button>
+                    </form>
+                  ) : null}
+                </div>
               )}
             </div>
             <div className="mt-5">
@@ -207,6 +251,41 @@ export default async function RenderStudioPage({
               )}
             </div>
           </section>
+
+          {renderJob || outputUrl?.signedUrl ? (
+            <section className="mt-8 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5">
+              <h2 className="text-xl font-semibold">MP4 Render</h2>
+              {renderJob ? (
+                <div className="mt-4">
+                  <RenderJobStatus
+                    attempt={renderJob.attempt}
+                    maxAttempts={renderJob.max_attempts}
+                    progress={Number(renderJob.progress)}
+                    status={renderJob.status}
+                  />
+                </div>
+              ) : null}
+              {outputUrl?.signedUrl ? (
+                <div className="mt-5">
+                  <video
+                    className="aspect-video w-full rounded-xl bg-black"
+                    controls
+                    preload="metadata"
+                    src={outputUrl.signedUrl}
+                  >
+                    영상 재생을 지원하지 않는 브라우저입니다.
+                  </video>
+                  <a
+                    className="mt-4 inline-flex rounded-full border border-[var(--pine)] px-4 py-2 text-sm font-semibold text-[var(--pine)]"
+                    download
+                    href={outputUrl.signedUrl}
+                  >
+                    MP4 다운로드
+                  </a>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
 
           <section className="mt-8 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5">
             <h2 className="text-xl font-semibold">Manifest 입력 고정</h2>

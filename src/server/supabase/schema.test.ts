@@ -78,6 +78,10 @@ const renderManifestWorkflowMigration = readFileSync(
   "supabase/migrations/20260903080000_render_manifest_workflow.sql",
   "utf8",
 );
+const asyncRenderWorkerMigration = readFileSync(
+  "supabase/migrations/20260904010000_async_render_worker.sql",
+  "utf8",
+);
 const sceneImageAssetIndexesMigration = readFileSync(
   join(
     process.cwd(),
@@ -333,6 +337,31 @@ describe("scene image asset migration", () => {
     }
     expect(renderManifestWorkflowMigration).toContain("security invoker");
     expect(renderManifestWorkflowMigration).toMatch(/to authenticated;/);
+  });
+
+  it("claims, leases, completes, and retries MP4 render jobs safely", () => {
+    for (const functionName of [
+      "enqueue_render_job",
+      "claim_render_job",
+      "heartbeat_render_job",
+      "complete_render_job",
+      "fail_render_job",
+    ]) {
+      expect(asyncRenderWorkerMigration).toContain(
+        `function public.${functionName}`,
+      );
+    }
+    expect(asyncRenderWorkerMigration).toContain("for update skip locked");
+    expect(asyncRenderWorkerMigration).toContain(
+      "jobs_render_version_workspace_fkey",
+    );
+    expect(asyncRenderWorkerMigration).toContain("to service_role");
+    expect(asyncRenderWorkerMigration).toContain(
+      "from public, anon, authenticated",
+    );
+    expect(asyncRenderWorkerMigration).toContain(
+      "private.protect_render_version",
+    );
   });
 
   it("allows only one persisted asset for a generation", () => {

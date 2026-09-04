@@ -594,11 +594,16 @@ export type Database = {
           idempotency_key: string;
           input: Json;
           kind: string;
+          heartbeat_at: string | null;
+          lease_expires_at: string | null;
           max_attempts: number;
           output: Json | null;
+          progress: number;
+          render_version_id: string | null;
           started_at: string | null;
           status: Database["public"]["Enums"]["run_status"];
           updated_at: string;
+          worker_id: string | null;
           workspace_id: string;
         };
         Insert: {
@@ -611,11 +616,16 @@ export type Database = {
           idempotency_key: string;
           input?: Json;
           kind: string;
+          heartbeat_at?: string | null;
+          lease_expires_at?: string | null;
           max_attempts?: number;
           output?: Json | null;
+          progress?: number;
+          render_version_id?: string | null;
           started_at?: string | null;
           status?: Database["public"]["Enums"]["run_status"];
           updated_at?: string;
+          worker_id?: string | null;
           workspace_id: string;
         };
         Update: {
@@ -628,11 +638,16 @@ export type Database = {
           idempotency_key?: string;
           input?: Json;
           kind?: string;
+          heartbeat_at?: string | null;
+          lease_expires_at?: string | null;
           max_attempts?: number;
           output?: Json | null;
+          progress?: number;
+          render_version_id?: string | null;
           started_at?: string | null;
           status?: Database["public"]["Enums"]["run_status"];
           updated_at?: string;
+          worker_id?: string | null;
           workspace_id?: string;
         };
         Relationships: [
@@ -642,6 +657,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "episodes";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "jobs_render_version_workspace_fkey";
+            columns: ["render_version_id", "workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "render_versions";
+            referencedColumns: ["id", "workspace_id"];
           },
           {
             foreignKeyName: "jobs_workspace_id_fkey";
@@ -1407,6 +1429,29 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      claim_render_job: {
+        Args: { p_lease_seconds?: number; p_worker_id: string };
+        Returns: {
+          attempt: number;
+          episode_id: string;
+          job_id: string;
+          manifest: Json;
+          render_version_id: string;
+          workspace_id: string;
+        }[];
+      };
+      complete_render_job: {
+        Args: {
+          p_bytes: number;
+          p_checksum_sha256: string;
+          p_job_id: string;
+          p_metadata: Json;
+          p_storage_bucket: string;
+          p_storage_path: string;
+          p_worker_id: string;
+        };
+        Returns: string;
+      };
       create_render_version: {
         Args: {
           p_episode_id: string;
@@ -1465,6 +1510,26 @@ export type Database = {
           brief_id: string;
           episode_id: string;
         }[];
+      };
+      enqueue_render_job: {
+        Args: { p_render_version_id: string };
+        Returns: {
+          job_id: string;
+          status: Database["public"]["Enums"]["run_status"];
+        }[];
+      };
+      fail_render_job: {
+        Args: { p_error: Json; p_job_id: string; p_worker_id: string };
+        Returns: Database["public"]["Enums"]["run_status"];
+      };
+      heartbeat_render_job: {
+        Args: {
+          p_job_id: string;
+          p_lease_seconds?: number;
+          p_progress: number;
+          p_worker_id: string;
+        };
+        Returns: boolean;
       };
     };
     Enums: {

@@ -7,8 +7,8 @@ import {
   useCurrentFrame,
 } from "remotion";
 
-import type { ResolvedRenderManifest } from "@/domain/render-manifest";
-import { dbToLinearVolume } from "@/domain/render-manifest";
+import type { ResolvedRenderManifest } from "../domain/render-manifest";
+import { dbToLinearVolume } from "../domain/render-manifest";
 
 function SceneVisual({
   durationInFrames,
