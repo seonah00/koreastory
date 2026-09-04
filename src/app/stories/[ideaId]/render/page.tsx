@@ -427,6 +427,15 @@ export default async function RenderStudioPage({
                     </button>
                   </form>
                 ) : null}
+                {episode?.stage === "ready" ||
+                episode?.stage === "published" ? (
+                  <Link
+                    className="rounded-full bg-[var(--rust)] px-4 py-2 text-sm font-semibold text-white"
+                    href={`/stories/${idea.id}/publish`}
+                  >
+                    YouTube 패키지 만들기 →
+                  </Link>
+                ) : null}
               </div>
             </section>
           ) : null}

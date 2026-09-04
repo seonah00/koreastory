@@ -86,6 +86,10 @@ const subtitleExportsMigration = readFileSync(
   "supabase/migrations/20260904020000_subtitle_exports_and_review.sql",
   "utf8",
 );
+const publishPackageMigration = readFileSync(
+  "supabase/migrations/20260904030000_publish_package_workflow.sql",
+  "utf8",
+);
 const sceneImageAssetIndexesMigration = readFileSync(
   join(
     process.cwd(),
@@ -388,6 +392,32 @@ describe("scene image asset migration", () => {
     expect(subtitleExportsMigration).toContain("security invoker");
     expect(subtitleExportsMigration).toContain("from public, anon");
     expect(subtitleExportsMigration).toContain("to authenticated");
+  });
+
+  it("stores immutable workspace-scoped publish package versions", () => {
+    expect(publishPackageMigration).toContain(
+      "create table public.publish_package_versions",
+    );
+    for (const relationship of [
+      "episode",
+      "render",
+      "generation",
+      "thumbnail",
+    ]) {
+      expect(publishPackageMigration).toContain(
+        `publish_packages_${relationship}_workspace_fkey`,
+      );
+    }
+    expect(publishPackageMigration).toContain("enable row level security");
+    expect(publishPackageMigration).toContain(
+      "private.protect_publish_package",
+    );
+    expect(publishPackageMigration).toContain(
+      "function public.create_publish_package_version",
+    );
+    expect(publishPackageMigration).toContain("security invoker");
+    expect(publishPackageMigration).toContain("from public, anon");
+    expect(publishPackageMigration).toContain("to authenticated");
   });
 
   it("allows only one persisted asset for a generation", () => {

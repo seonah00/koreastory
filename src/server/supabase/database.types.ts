@@ -743,6 +743,87 @@ export type Database = {
           },
         ];
       };
+      publish_package_versions: {
+        Row: {
+          approved_at: string | null;
+          approved_by: string | null;
+          content: Json;
+          created_at: string;
+          episode_id: string;
+          generation_id: string | null;
+          id: string;
+          render_version_id: string;
+          status: Database["public"]["Enums"]["approval_status"];
+          thumbnail_asset_id: string | null;
+          version: number;
+          workspace_id: string;
+        };
+        Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          content: Json;
+          created_at?: string;
+          episode_id: string;
+          generation_id?: string | null;
+          id?: string;
+          render_version_id: string;
+          status?: Database["public"]["Enums"]["approval_status"];
+          thumbnail_asset_id?: string | null;
+          version: number;
+          workspace_id: string;
+        };
+        Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          content?: Json;
+          created_at?: string;
+          episode_id?: string;
+          generation_id?: string | null;
+          id?: string;
+          render_version_id?: string;
+          status?: Database["public"]["Enums"]["approval_status"];
+          thumbnail_asset_id?: string | null;
+          version?: number;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "publish_packages_episode_workspace_fkey";
+            columns: ["episode_id", "workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "episodes";
+            referencedColumns: ["id", "workspace_id"];
+          },
+          {
+            foreignKeyName: "publish_packages_generation_workspace_fkey";
+            columns: ["generation_id", "workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "generations";
+            referencedColumns: ["id", "workspace_id"];
+          },
+          {
+            foreignKeyName: "publish_packages_render_workspace_fkey";
+            columns: ["render_version_id", "workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "render_versions";
+            referencedColumns: ["id", "workspace_id"];
+          },
+          {
+            foreignKeyName: "publish_packages_thumbnail_workspace_fkey";
+            columns: ["thumbnail_asset_id", "workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "assets";
+            referencedColumns: ["id", "workspace_id"];
+          },
+          {
+            foreignKeyName: "publish_package_versions_approved_by_fkey";
+            columns: ["approved_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       prompt_versions: {
         Row: {
           created_at: string;
@@ -1485,6 +1566,18 @@ export type Database = {
         };
         Returns: {
           render_version_id: string;
+          version: number;
+        }[];
+      };
+      create_publish_package_version: {
+        Args: {
+          p_content: Json;
+          p_episode_id: string;
+          p_generation_id: string;
+          p_render_version_id: string;
+        };
+        Returns: {
+          publish_package_version_id: string;
           version: number;
         }[];
       };

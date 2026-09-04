@@ -46,7 +46,8 @@ pnpm check
 - TASK-014: 승인 자산 기반 Render Manifest와 Remotion 영상 자동 조립
 - TASK-015: 비동기 MP4 Render Worker와 결과 Video Asset 연결
 - TASK-016: 카테고리별 자막, VTT·SRT, 최종 Review/Export 패키지
-- 다음 작업: YouTube 제목·설명·챕터·썸네일 게시 패키지
+- TASK-017: YouTube 제목·설명·챕터·태그·썸네일 게시 패키지
+- 다음 작업: 게시 URL·일시 기록과 YouTube 성과 데이터 기반 분석
 
 자세한 기술 원칙은 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)를 참고합니다.
 
@@ -77,3 +78,5 @@ TASK-014의 Render Manifest와 Remotion 조립 구조는 [docs/TASK-014_IMPLEMEN
 TASK-015의 비동기 MP4 Worker 구조는 [docs/TASK-015_IMPLEMENTATION.md](docs/TASK-015_IMPLEMENTATION.md)에 정리되어 있습니다.
 
 TASK-016의 자막과 Review/Export 구조는 [docs/TASK-016_IMPLEMENTATION.md](docs/TASK-016_IMPLEMENTATION.md)에 정리되어 있습니다.
+
+TASK-017의 YouTube 게시 패키지 구조는 [docs/TASK-017_IMPLEMENTATION.md](docs/TASK-017_IMPLEMENTATION.md)에 정리되어 있습니다.
